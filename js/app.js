@@ -59,12 +59,12 @@ function navigateTo(page) {
     dashboard: ['Dashboard', "Welcome back! Here's your overview."],
     medicines: ['Medicines', 'Manage medicine inventory.'],
     customers: ['Customers', 'Manage customer records.'],
-    billing: ['Billing & Sales', 'Create bills and process sales.'],
-    history: ['Purchase History', 'View all medicine purchase records.'],
     reminders: ['Medicine Reminders', 'Manage patient medicine reminders.']
   };
-  document.getElementById('pageTitle').textContent = titles[page][0];
-  document.getElementById('pageSubtitle').textContent = titles[page][1];
+  if (titles[page]) {
+    document.getElementById('pageTitle').textContent = titles[page][0];
+    document.getElementById('pageSubtitle').textContent = titles[page][1];
+  }
 
   closeSidebar();
   refreshCurrentPage();
@@ -75,8 +75,6 @@ function refreshCurrentPage() {
     case 'dashboard': renderDashboard(); break;
     case 'medicines': renderMedicines(); break;
     case 'customers': renderCustomers(); break;
-    case 'billing': renderBilling(); break;
-    case 'history': renderHistory(); break;
     case 'reminders': renderReminders(); break;
   }
 }
@@ -102,90 +100,78 @@ function initApp() {
 function renderDashboard() {
   const customers = DB.get('customers');
   const medicines = DB.get('medicines');
-  const bills = DB.get('bills');
   const reminders = DB.get('reminders');
-  const today = new Date().toISOString().split('T')[0];
 
   const lowStockMeds = medicines.filter(m => m.quantity <= (m.lowStockThreshold || 10));
   const expiringSoon = medicines.filter(m => {
     const days = daysUntil(m.expiryDate);
     return days <= 90 && days >= 0;
   });
-  const todaySales = bills.filter(b => b.date === today);
-  const todayRevenue = todaySales.reduce((s, b) => s + b.total, 0);
 
-  document.getElementById('statCustomers').textContent = customers.length;
-  document.getElementById('statMedicines').textContent = medicines.length;
-  document.getElementById('statLowStock').textContent = lowStockMeds.length;
-  document.getElementById('statExpiring').textContent = expiringSoon.length;
-  document.getElementById('statTodaySales').textContent = '₹' + todayRevenue.toLocaleString('en-IN');
+  const statCust = document.getElementById('statCustomers');
+  if (statCust) statCust.textContent = customers.length;
+  const statMed = document.getElementById('statMedicines');
+  if (statMed) statMed.textContent = medicines.length;
+  const statLow = document.getElementById('statLowStock');
+  if (statLow) statLow.textContent = lowStockMeds.length;
+  const statExp = document.getElementById('statExpiring');
+  if (statExp) statExp.textContent = expiringSoon.length;
 
   // Upcoming reminders
   const pendingReminders = reminders.filter(r => r.status === 'pending').sort((a, b) => new Date(a.finishDate) - new Date(b.finishDate));
   const dashRem = document.getElementById('dashReminders');
-  if (pendingReminders.length === 0) {
-    dashRem.innerHTML = '<div class="empty-state" style="padding:20px;"><p>No pending reminders</p></div>';
-  } else {
-    dashRem.innerHTML = pendingReminders.slice(0, 5).map(r => `
-      <div class="reminder-item">
-        <div class="reminder-icon pending">&#9857;</div>
-        <div class="reminder-info">
-          <h4>${r.customerName}</h4>
-          <p>${r.medicineName}</p>
+  if (dashRem) {
+    if (pendingReminders.length === 0) {
+      dashRem.innerHTML = '<div class="empty-state" style="padding:20px;"><p>No pending reminders</p></div>';
+    } else {
+      dashRem.innerHTML = pendingReminders.slice(0, 5).map(r => `
+        <div class="reminder-item">
+          <div class="reminder-icon pending">&#9857;</div>
+          <div class="reminder-info">
+            <h4>${r.customerName}</h4>
+            <p>${r.medicineName}</p>
+          </div>
+          <div class="reminder-date">${formatDate(r.finishDate)}</div>
         </div>
-        <div class="reminder-date">${formatDate(r.finishDate)}</div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
   // Low stock
   const dashLowStock = document.getElementById('dashLowStock');
-  if (lowStockMeds.length === 0) {
-    dashLowStock.innerHTML = '<div class="empty-state" style="padding:20px;"><p>All medicines well stocked</p></div>';
-  } else {
-    dashLowStock.innerHTML = lowStockMeds.slice(0, 5).map(m => `
-      <div class="reminder-item">
-        <div class="reminder-icon ${m.quantity === 0 ? 'failed' : 'pending'}">&#9888;</div>
-        <div class="reminder-info">
-          <h4>${m.name}</h4>
-          <p>${m.company}</p>
+  if (dashLowStock) {
+    if (lowStockMeds.length === 0) {
+      dashLowStock.innerHTML = '<div class="empty-state" style="padding:20px;"><p>All medicines well stocked</p></div>';
+    } else {
+      dashLowStock.innerHTML = lowStockMeds.slice(0, 5).map(m => `
+        <div class="reminder-item">
+          <div class="reminder-icon ${m.quantity === 0 ? 'failed' : 'pending'}">&#9888;</div>
+          <div class="reminder-info">
+            <h4>${m.name}</h4>
+            <p>${m.company}</p>
+          </div>
+          <div class="reminder-date"><span class="badge ${m.quantity === 0 ? 'badge-danger' : 'badge-warning'}">${m.quantity} left</span></div>
         </div>
-        <div class="reminder-date"><span class="badge ${m.quantity === 0 ? 'badge-danger' : 'badge-warning'}">${m.quantity} left</span></div>
-      </div>
-    `).join('');
-  }
-
-  // Recent sales
-  const recentSales = document.getElementById('dashRecentSales');
-  const recentBills = [...bills].reverse().slice(0, 5);
-  if (recentBills.length === 0) {
-    recentSales.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No recent sales</td></tr>';
-  } else {
-    recentSales.innerHTML = recentBills.map(b => {
-      const cust = DB.get('customers').find(c => c.id === b.customerId);
-      return `<tr>
-        <td><strong>${b.billNumber}</strong></td>
-        <td>${cust ? cust.name : 'N/A'}</td>
-        <td><strong>₹${b.total.toLocaleString('en-IN')}</strong></td>
-        <td>${formatDate(b.date)}</td>
-      </tr>`;
-    }).join('');
+      `).join('');
+    }
   }
 
   // Expiring
   const dashExpiring = document.getElementById('dashExpiring');
-  if (expiringSoon.length === 0) {
-    dashExpiring.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No medicines expiring soon</td></tr>';
-  } else {
-    dashExpiring.innerHTML = expiringSoon.slice(0, 5).map(m => {
-      const days = daysUntil(m.expiryDate);
-      return `<tr class="${days <= 30 ? 'expired' : ''}">
-        <td>${m.name}</td>
-        <td>${formatDate(m.expiryDate)}</td>
-        <td>${m.quantity}</td>
-        <td><span class="badge ${days <= 30 ? 'badge-danger' : 'badge-warning'}">${days} days</span></td>
-      </tr>`;
-    }).join('');
+  if (dashExpiring) {
+    if (expiringSoon.length === 0) {
+      dashExpiring.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No medicines expiring soon</td></tr>';
+    } else {
+      dashExpiring.innerHTML = expiringSoon.slice(0, 5).map(m => {
+        const days = daysUntil(m.expiryDate);
+        return `<tr class="${days <= 30 ? 'expired' : ''}">
+          <td>${m.name}</td>
+          <td>${formatDate(m.expiryDate)}</td>
+          <td>${m.quantity}</td>
+          <td><span class="badge ${days <= 30 ? 'badge-danger' : 'badge-warning'}">${days} days</span></td>
+        </tr>`;
+      }).join('');
+    }
   }
 }
 
@@ -743,271 +729,7 @@ function viewCustomerHistory(customerId) {
   document.getElementById('custHistoryModal').classList.add('active');
 }
 
-// ===================== BILLING =====================
-function renderBilling() {
-  populateBillCustomer();
-  populateBillMedicine();
-}
 
-function populateBillCustomer() {
-  const customers = DB.get('customers');
-  const sel = document.getElementById('billCustomer');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
-    customers.map(c => `<option value="${c.id}" ${c.id === current ? 'selected' : ''}>${c.name} (${c.mobile})</option>`).join('');
-}
-
-function populateBillMedicine() {
-  const medicines = DB.get('medicines').filter(m => m.quantity > 0);
-  const sel = document.getElementById('billMedicine');
-  sel.innerHTML = '<option value="">-- Select Medicine --</option>' +
-    medicines.map(m => `<option value="${m.id}" data-price="${m.price}" data-qty="${m.quantity}">${m.name} - ₹${m.price} (${m.quantity} in stock)</option>`).join('');
-}
-
-function onBillMedicineSelect() {
-  const sel = document.getElementById('billMedicine');
-  const opt = sel.options[sel.selectedIndex];
-  if (opt.value) {
-    document.getElementById('billQty').value = 1;
-    document.getElementById('billDays').value = 30;
-  }
-}
-
-function addBillItem() {
-  const medSel = document.getElementById('billMedicine');
-  const medId = medSel.value;
-  if (!medId) { showToast('Please select a medicine', 'error'); return; }
-
-  const qty = parseInt(document.getElementById('billQty').value);
-  const days = parseInt(document.getElementById('billDays').value);
-  if (!qty || qty <= 0) { showToast('Invalid quantity', 'error'); return; }
-  if (!days || days <= 0) { showToast('Invalid days supply', 'error'); return; }
-
-  const med = DB.get('medicines').find(m => m.id === medId);
-  if (!med) return;
-  if (qty > med.quantity) {
-    showToast(`Only ${med.quantity} units available`, 'error');
-    return;
-  }
-
-  const existingIdx = billItems.findIndex(i => i.medicineId === medId);
-  if (existingIdx !== -1) {
-    const newQty = billItems[existingIdx].quantity + qty;
-    if (newQty > med.quantity) {
-      showToast(`Only ${med.quantity} units available (already ${billItems[existingIdx].quantity} in bill)`, 'error');
-      return;
-    }
-    billItems[existingIdx].quantity = newQty;
-    billItems[existingIdx].daysSupply = days;
-    billItems[existingIdx].total = newQty * med.price;
-  } else {
-    billItems.push({
-      medicineId: medId,
-      name: med.name,
-      price: med.price,
-      quantity: qty,
-      daysSupply: days,
-      total: qty * med.price
-    });
-  }
-
-  renderBillItems();
-  medSel.value = '';
-  document.getElementById('billQty').value = 1;
-  document.getElementById('billDays').value = 30;
-}
-
-function removeBillItem(index) {
-  billItems.splice(index, 1);
-  renderBillItems();
-}
-
-function renderBillItems() {
-  const container = document.getElementById('billItems');
-  if (billItems.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:16px;">No items added yet.</p>';
-  } else {
-    container.innerHTML = billItems.map((item, idx) => `
-      <div class="bill-medicine-item">
-        <div class="medicine-details" style="flex:1;">
-          <h4>${item.name}</h4>
-          <p>₹${item.price} x ${item.quantity} = ₹${item.total} | ${item.daysSupply} days</p>
-        </div>
-        <button class="btn-icon btn-delete" onclick="removeBillItem(${idx})" style="background:var(--danger-bg);color:var(--danger);border:none;width:28px;height:28px;border-radius:6px;cursor:pointer;">&times;</button>
-      </div>
-    `).join('');
-  }
-
-  const total = billItems.reduce((s, i) => s + i.total, 0);
-  document.getElementById('billTotal').textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-}
-
-function resetBill() {
-  billItems = [];
-  document.getElementById('billCustomer').value = '';
-  document.getElementById('billPaymentMode').value = 'Cash';
-  renderBillItems();
-}
-
-function generateBill() {
-  const customerId = document.getElementById('billCustomer').value;
-  const paymentMode = document.getElementById('billPaymentMode').value;
-  if (!customerId) { showToast('Please select a customer', 'error'); return; }
-  if (billItems.length === 0) { showToast('Please add at least one medicine', 'error'); return; }
-
-  const total = billItems.reduce((s, i) => s + i.total, 0);
-  let counter = DB.getConfig('billCounter') || 1;
-  const billNumber = 'CNC-' + String(counter).padStart(4, '0');
-
-  const bill = {
-    id: DB.generateId(),
-    billNumber,
-    customerId,
-    employeeId: currentUser ? currentUser.id : '',
-    date: new Date().toISOString().split('T')[0],
-    items: [...billItems],
-    total,
-    paymentMode
-  };
-
-  let bills = DB.get('bills');
-  bills.push(bill);
-  DB.set('bills', bills);
-  DB.setConfig('billCounter', counter + 1);
-
-  // Reduce stock
-  let medicines = DB.get('medicines');
-  billItems.forEach(item => {
-    const idx = medicines.findIndex(m => m.id === item.medicineId);
-    if (idx !== -1) {
-      medicines[idx].quantity = Math.max(0, medicines[idx].quantity - item.quantity);
-    }
-  });
-  DB.set('medicines', medicines);
-
-  // Create purchase records
-  const customer = DB.get('customers').find(c => c.id === customerId);
-  let purchases = DB.get('purchases');
-  billItems.forEach(item => {
-    const purchaseDate = bill.date;
-    const finishDate = new Date(purchaseDate);
-    finishDate.setDate(finishDate.getDate() + item.daysSupply);
-
-    purchases.push({
-      id: DB.generateId(),
-      customerId,
-      medicineId: item.medicineId,
-      medicineName: item.name,
-      purchaseDate,
-      quantity: item.quantity,
-      daysSupply: item.daysSupply,
-      finishDate: finishDate.toISOString().split('T')[0],
-      billId: bill.id
-    });
-  });
-  DB.set('purchases', purchases);
-
-  // Auto-generate reminders
-  autoGenerateReminders();
-
-  // Show bill preview
-  showBillPreview(bill, customer);
-  showToast(`Bill ${billNumber} generated successfully!`, 'success');
-
-  resetBill();
-  updateBadges();
-}
-
-function showBillPreview(bill, customer) {
-  const preview = document.getElementById('billPreview');
-  preview.innerHTML = `
-    <div class="bill-preview">
-      <div class="bill-header-section">
-        <h2>Care N Cure</h2>
-        <p>Medical Shop Management System</p>
-      </div>
-      <div class="bill-info">
-        <div><span>Bill No:</span> <strong>${bill.billNumber}</strong></div>
-        <div><span>Date:</span> <strong>${formatDate(bill.date)}</strong></div>
-        <div><span>Customer:</span> <strong>${customer ? customer.name : 'N/A'}</strong></div>
-        <div><span>Payment:</span> <strong>${bill.paymentMode}</strong></div>
-      </div>
-      <table class="bill-items-table">
-        <thead>
-          <tr><th>Medicine</th><th>Price</th><th>Qty</th><th>Total</th></tr>
-        </thead>
-        <tbody>
-          ${bill.items.map(item => `
-            <tr>
-              <td>${item.name}</td>
-              <td>₹${item.price}</td>
-              <td>${item.quantity}</td>
-              <td>₹${item.total}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <div class="bill-total">Grand Total: ₹${bill.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-      <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted);">Thank you for your purchase!</p>
-    </div>
-  `;
-}
-
-// ===================== PURCHASE HISTORY =====================
-function renderHistory() {
-  const search = document.getElementById('histSearch').value.toLowerCase();
-  const custFilter = document.getElementById('histCustomerFilter').value;
-
-  populateHistoryCustomerFilter();
-
-  let purchases = DB.get('purchases');
-  if (search) {
-    purchases = purchases.filter(p =>
-      p.medicineName.toLowerCase().includes(search) ||
-      (DB.get('customers').find(c => c.id === p.customerId)?.name || '').toLowerCase().includes(search)
-    );
-  }
-  if (custFilter) {
-    purchases = purchases.filter(p => p.customerId === custFilter);
-  }
-
-  purchases = purchases.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
-
-  const table = document.getElementById('historyTable');
-  if (purchases.length === 0) {
-    table.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">&#128196;</div><h3>No purchase records</h3></td></tr>';
-    return;
-  }
-
-  table.innerHTML = purchases.map(p => {
-    const customer = DB.get('customers').find(c => c.id === p.customerId);
-    const bill = DB.get('bills').find(b => b.id === p.billId);
-    const daysLeft = daysUntil(p.finishDate);
-    let status = '';
-    if (daysLeft < 0) status = '<span class="badge badge-neutral">Completed</span>';
-    else if (daysLeft <= 3) status = '<span class="badge badge-warning">Finishing Soon</span>';
-    else status = '<span class="badge badge-success">Active</span>';
-
-    return `<tr>
-      <td>${customer ? customer.name : 'N/A'}</td>
-      <td>${p.medicineName}</td>
-      <td>${p.quantity}</td>
-      <td>${formatDate(p.purchaseDate)}</td>
-      <td>${p.daysSupply} days</td>
-      <td>${formatDate(p.finishDate)} ${status}</td>
-      <td>${bill ? bill.billNumber : '-'}</td>
-      <td><button class="btn-icon btn-whatsapp" onclick="openWhatsAppReminder('${p.customerId}', '${p.medicineId}', '${p.finishDate}')" title="Send WhatsApp Reminder">&#128172;</button></td>
-    </tr>`;
-  }).join('');
-}
-
-function populateHistoryCustomerFilter() {
-  const customers = DB.get('customers');
-  const sel = document.getElementById('histCustomerFilter');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Customers</option>' +
-    customers.map(c => `<option value="${c.id}" ${c.id === current ? 'selected' : ''}>${c.name}</option>`).join('');
-}
 
 // ===================== REMINDERS =====================
 function autoGenerateReminders() {
