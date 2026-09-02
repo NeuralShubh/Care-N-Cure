@@ -57,7 +57,6 @@ function navigateTo(page) {
 
   const titles = {
     dashboard: ['Dashboard', "Welcome back! Here's your overview."],
-    employees: ['Employees', 'Manage your staff members.'],
     medicines: ['Medicines', 'Manage medicine inventory.'],
     customers: ['Customers', 'Manage customer records.'],
     billing: ['Billing & Sales', 'Create bills and process sales.'],
@@ -74,7 +73,6 @@ function navigateTo(page) {
 function refreshCurrentPage() {
   switch(currentPage) {
     case 'dashboard': renderDashboard(); break;
-    case 'employees': renderEmployees(); break;
     case 'medicines': renderMedicines(); break;
     case 'customers': renderCustomers(); break;
     case 'billing': renderBilling(); break;
@@ -102,7 +100,6 @@ function initApp() {
 
 // ===================== DASHBOARD =====================
 function renderDashboard() {
-  const employees = DB.get('employees');
   const customers = DB.get('customers');
   const medicines = DB.get('medicines');
   const bills = DB.get('bills');
@@ -117,7 +114,6 @@ function renderDashboard() {
   const todaySales = bills.filter(b => b.date === today);
   const todayRevenue = todaySales.reduce((s, b) => s + b.total, 0);
 
-  document.getElementById('statEmployees').textContent = employees.length;
   document.getElementById('statCustomers').textContent = customers.length;
   document.getElementById('statMedicines').textContent = medicines.length;
   document.getElementById('statLowStock').textContent = lowStockMeds.length;
@@ -193,105 +189,7 @@ function renderDashboard() {
   }
 }
 
-// ===================== EMPLOYEES =====================
-function renderEmployees() {
-  const search = document.getElementById('empSearch').value.toLowerCase();
-  let employees = DB.get('employees');
-  if (search) {
-    employees = employees.filter(e =>
-      e.name.toLowerCase().includes(search) ||
-      e.mobile.includes(search) ||
-      e.designation.toLowerCase().includes(search)
-    );
-  }
 
-  const table = document.getElementById('employeeTable');
-  if (employees.length === 0) {
-    table.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon">&#9787;</div><h3>No employees found</h3></td></tr>';
-    return;
-  }
-
-  table.innerHTML = employees.map(e => `
-    <tr>
-      <td><strong>${e.name}</strong>${e.isOwner ? ' <span class="badge badge-primary" style="margin-left:6px;">Owner</span>' : ''}</td>
-      <td>${e.mobile}</td>
-      <td><span class="badge badge-secondary">${e.designation}</span></td>
-      <td>${formatDate(e.joiningDate)}</td>
-      <td>₹${e.salary.toLocaleString('en-IN')}</td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-icon btn-edit" onclick="editEmployee('${e.id}')" title="Edit">&#9998;</button>
-          ${!e.isOwner ? `<button class="btn-icon btn-delete" onclick="deleteEmployee('${e.id}')" title="Delete">&#128465;</button>` : ''}
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function openEmployeeModal(id) {
-  document.getElementById('employeeForm').reset();
-  document.getElementById('empEditId').value = '';
-  document.getElementById('empModalTitle').textContent = 'Add Employee';
-  document.getElementById('empJoiningDate').value = new Date().toISOString().split('T')[0];
-  if (id) {
-    const emp = DB.get('employees').find(e => e.id === id);
-    if (emp) {
-      document.getElementById('empEditId').value = emp.id;
-      document.getElementById('empModalTitle').textContent = 'Edit Employee';
-      document.getElementById('empName').value = emp.name;
-      document.getElementById('empMobile').value = emp.mobile;
-      document.getElementById('empDesignation').value = emp.designation;
-      document.getElementById('empAddress').value = emp.address || '';
-      document.getElementById('empJoiningDate').value = emp.joiningDate;
-      document.getElementById('empSalary').value = emp.salary;
-    }
-  }
-  document.getElementById('employeeModal').classList.add('active');
-}
-
-function editEmployee(id) { openEmployeeModal(id); }
-
-function saveEmployee(e) {
-  e.preventDefault();
-  const editId = document.getElementById('empEditId').value;
-  const empData = {
-    name: document.getElementById('empName').value.trim(),
-    mobile: document.getElementById('empMobile').value.trim(),
-    designation: document.getElementById('empDesignation').value,
-    address: document.getElementById('empAddress').value.trim(),
-    joiningDate: document.getElementById('empJoiningDate').value,
-    salary: parseFloat(document.getElementById('empSalary').value),
-    isOwner: document.getElementById('empDesignation').value === 'Owner'
-  };
-
-  let employees = DB.get('employees');
-  if (editId) {
-    const idx = employees.findIndex(e => e.id === editId);
-    if (idx !== -1) {
-      employees[idx] = { ...employees[idx], ...empData };
-    }
-    showToast('Employee updated successfully', 'success');
-  } else {
-    empData.id = DB.generateId();
-    employees.push(empData);
-    showToast('Employee added successfully', 'success');
-  }
-
-  DB.set('employees', employees);
-  closeModal('employeeModal');
-  renderEmployees();
-}
-
-function deleteEmployee(id) {
-  showConfirm('Delete Employee', 'Are you sure you want to delete this employee? This action cannot be undone.', function() {
-    let employees = DB.get('employees');
-    employees = employees.filter(e => e.id !== id);
-    DB.set('employees', employees);
-    showToast('Employee deleted', 'success');
-    renderEmployees();
-    updateBadges();
-  });
-}
 
 // ===================== MEDICINES =====================
 function renderMedicines() {

@@ -58,9 +58,6 @@
         </a>
 
         <div class="nav-section">Management</div>
-        <a class="nav-item" data-page="employees" onclick="navigateTo('employees')">
-          <span class="nav-icon">&#9787;</span> Employees
-        </a>
         <a class="nav-item" data-page="medicines" onclick="navigateTo('medicines')">
           <span class="nav-icon">&#9764;</span> Medicines
           <span id="navMedAlerts" class="nav-badge" style="display:none;"></span>
@@ -119,11 +116,6 @@
         <!-- ========== DASHBOARD ========== -->
         <section id="page-dashboard" class="page-section active">
           <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon blue">&#9787;</div>
-              <div class="stat-value" id="statEmployees">0</div>
-              <div class="stat-label">Total Employees</div>
-            </div>
             <div class="stat-card">
               <div class="stat-icon purple">&#9823;</div>
               <div class="stat-value" id="statCustomers">0</div>
@@ -206,30 +198,6 @@
           </div>
         </section>
 
-        <!-- ========== EMPLOYEES ========== -->
-        <section id="page-employees" class="page-section">
-          <div class="toolbar">
-            <div class="search-box">
-              <span class="search-icon">&#128269;</span>
-              <input type="text" id="empSearch" placeholder="Search employees..." oninput="renderEmployees()">
-            </div>
-            <button class="btn btn-primary" onclick="openEmployeeModal()">+ Add Employee</button>
-          </div>
-          <div class="card">
-            <div class="card-body no-padding">
-              <div class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th><th>Mobile</th><th>Designation</th><th>Joining Date</th><th>Salary</th><th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="employeeTable"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <!-- ========== MEDICINES ========== -->
         <section id="page-medicines" class="page-section">
@@ -394,59 +362,6 @@
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Employee Modal -->
-  <div id="employeeModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'employeeModal')">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="empModalTitle">Add Employee</h3>
-        <button class="modal-close" onclick="closeModal('employeeModal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="employeeForm" onsubmit="saveEmployee(event)">
-          <input type="hidden" id="empEditId">
-          <div class="form-group">
-            <label>Full Name <span class="required">*</span></label>
-            <input type="text" id="empName" class="form-control" required placeholder="Enter employee name">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Mobile Number <span class="required">*</span></label>
-              <input type="tel" id="empMobile" class="form-control" required placeholder="10-digit mobile" pattern="[0-9]{10}">
-            </div>
-            <div class="form-group">
-              <label>Designation <span class="required">*</span></label>
-              <select id="empDesignation" class="form-control" required>
-                <option value="">Select Designation</option>
-                <option value="Owner">Owner</option>
-                <option value="Pharmacist">Pharmacist</option>
-                <option value="Cashier">Cashier</option>
-                <option value="Manager">Manager</option>
-                <option value="Helper">Helper</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Address</label>
-            <textarea id="empAddress" class="form-control" placeholder="Enter full address"></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Joining Date <span class="required">*</span></label>
-              <input type="date" id="empJoiningDate" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label>Monthly Salary (₹) <span class="required">*</span></label>
-              <input type="number" id="empSalary" class="form-control" required min="0" placeholder="Salary">
-            </div>
-          </div>
-          <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
-            <button type="button" class="btn btn-outline" onclick="closeModal('employeeModal')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Employee</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 
   <!-- Medicine Modal -->
   <div id="medicineModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'medicineModal')">
