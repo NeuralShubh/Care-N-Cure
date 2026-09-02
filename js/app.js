@@ -330,6 +330,7 @@ function saveMedicine(e) {
   DB.set('medicines', medicines);
   closeModal('medicineModal');
   renderMedicines();
+  populateCustMedicineDropdown();
   updateBadges();
 }
 
@@ -340,12 +341,25 @@ function deleteMedicine(id) {
     DB.set('medicines', medicines);
     showToast('Medicine deleted', 'success');
     renderMedicines();
+    populateCustMedicineDropdown();
     updateBadges();
   });
 }
 
 // ===================== CUSTOMERS =====================
+function populateCustMedicineDropdown() {
+  const medSelect = document.getElementById('custMedicine');
+  if (!medSelect) return;
+  const medicines = DB.get('medicines') || [];
+  const sorted = [...medicines].sort((a, b) => a.name.localeCompare(b.name));
+  const currentVal = medSelect.value;
+  medSelect.innerHTML = '<option value="">-- Select Medicine (Optional) --</option>' +
+    sorted.map(m => `<option value="${m.id}">${m.name} (${m.company}) - ₹${m.price} [Stock: ${m.quantity}]</option>`).join('');
+  if (currentVal) medSelect.value = currentVal;
+}
+
 function renderCustomers() {
+  populateCustMedicineDropdown();
   const search = document.getElementById('custSearch').value.toLowerCase();
   let customers = DB.get('customers');
   const purchases = DB.get('purchases');
@@ -394,12 +408,7 @@ function openCustomerModal(id) {
   document.getElementById('custEditId').value = '';
   document.getElementById('custModalTitle').textContent = 'Add Customer';
 
-  const medSelect = document.getElementById('custMedicine');
-  if (medSelect) {
-    const medicines = DB.get('medicines');
-    medSelect.innerHTML = '<option value="">-- Select Medicine (Optional) --</option>' +
-      medicines.map(m => `<option value="${m.id}">${m.name} (${m.company}) - ₹${m.price} [Stock: ${m.quantity}]</option>`).join('');
-  }
+  populateCustMedicineDropdown();
   const medFields = document.getElementById('custMedFields');
   if (medFields) medFields.style.display = 'none';
   const qtyInput = document.getElementById('custMedQty');
