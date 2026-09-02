@@ -347,9 +347,127 @@ function deleteMedicine(id) {
 }
 
 // ===================== CUSTOMERS =====================
+let selectedCustMedicines = {};
+
+function toggleCustMedDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('custMedDropdown');
+  if (!dropdown) return;
+  const isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+  dropdown.style.display = isHidden ? 'flex' : 'none';
+  if (isHidden) {
+    document.getElementById('custMedSearch').value = '';
+    filterCustMedOptions();
+  }
+}
+
+function filterCustMedOptions() {
+  const query = (document.getElementById('custMedSearch').value || '').toLowerCase();
+  const options = document.querySelectorAll('#custMedOptionsList .multi-select-option');
+  options.forEach(opt => {
+    const text = opt.textContent.toLowerCase();
+    opt.style.display = text.includes(query) ? 'flex' : 'none';
+  });
+}
+
+function toggleCustMedSelection(medId, e) {
+  if (e) e.stopPropagation();
+  const medicines = DB.get('medicines') || [];
+  const med = medicines.find(m => m.id === medId);
+  if (!med) return;
+
+  if (selectedCustMedicines[medId]) {
+    delete selectedCustMedicines[medId];
+  } else {
+    selectedCustMedicines[medId] = {
+      id: med.id,
+      name: med.name,
+      company: med.company || '',
+      price: med.price || 0,
+      quantity: 1,
+      daysSupply: 7
+    };
+  }
+
+  updateCustMedUI();
+}
+
+function removeCustMed(medId, e) {
+  if (e) e.stopPropagation();
+  delete selectedCustMedicines[medId];
+  updateCustMedUI();
+}
+
+function updateCustMedConfig(medId, field, val) {
+  if (selectedCustMedicines[medId]) {
+    selectedCustMedicines[medId][field] = Math.max(1, parseInt(val) || 1);
+  }
+}
+
+function updateCustMedUI() {
+  const checkboxes = document.querySelectorAll('#custMedOptionsList input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    cb.checked = !!selectedCustMedicines[cb.value];
+  });
+
+  const chipsContainer = document.getElementById('custMedSelectedChips');
+  if (!chipsContainer) return;
+  const selectedList = Object.values(selectedCustMedicines);
+  const count = selectedList.length;
+
+  if (count === 0) {
+    chipsContainer.innerHTML = '<span class="placeholder-text">-- Select Medicines (Optional) --</span>';
+  } else if (count <= 3) {
+    chipsContainer.innerHTML = selectedList.map(m => `
+      <span class="chip">
+        ${m.name}
+        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)">&times;</span>
+      </span>
+    `).join('');
+  } else {
+    const firstTwo = selectedList.slice(0, 2);
+    chipsContainer.innerHTML = firstTwo.map(m => `
+      <span class="chip">
+        ${m.name}
+        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)">&times;</span>
+      </span>
+    `).join('') + `<span class="badge badge-primary" style="font-size:12px;">+${count - 2} more (${count} selected)</span>`;
+  }
+
+  const configList = document.getElementById('custSelectedMedsList');
+  if (!configList) return;
+  if (count === 0) {
+    configList.style.display = 'none';
+    configList.innerHTML = '';
+  } else {
+    configList.style.display = 'block';
+    configList.innerHTML = `
+      <div style="font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Selected Medicines (${count})</div>
+      ${selectedList.map(m => `
+        <div class="med-item-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-weight:600; font-size:13px; color:var(--text-primary);">${m.name}${m.company ? ` (${m.company})` : ''}</span>
+            <span style="font-size:12px; color:var(--primary); font-weight:600;">₹${m.price}</span>
+          </div>
+          <div class="form-row" style="margin:0; gap:10px;">
+            <div class="form-group" style="margin:0; flex:1;">
+              <label style="font-size:11px; margin-bottom:2px;">Quantity</label>
+              <input type="number" class="form-control" min="1" value="${m.quantity}" onchange="updateCustMedConfig('${m.id}', 'quantity', this.value)" style="padding:4px 8px; font-size:12px; height:32px;">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+              <label style="font-size:11px; margin-bottom:2px;">Days Supply (Reminder)</label>
+              <input type="number" class="form-control" min="1" value="${m.daysSupply}" onchange="updateCustMedConfig('${m.id}', 'daysSupply', this.value)" style="padding:4px 8px; font-size:12px; height:32px;">
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }
+}
+
 function populateCustMedicineDropdown() {
-  const medSelect = document.getElementById('custMedicine');
-  if (!medSelect) return;
+  const optionsList = document.getElementById('custMedOptionsList');
+  if (!optionsList) return;
 
   try {
     let medicines = DB.get('medicines');
@@ -372,21 +490,32 @@ function populateCustMedicineDropdown() {
     const validMedicines = medicines.filter(m => m && m.id && m.name);
     validMedicines.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
 
-    const currentVal = medSelect.value;
-    let optionsHtml = '<option value="">-- Select Medicine (Optional) --</option>';
-    validMedicines.forEach(m => {
+    optionsList.innerHTML = validMedicines.map(m => {
+      const isChecked = !!selectedCustMedicines[m.id];
       const companyStr = m.company ? ` (${m.company})` : '';
       const priceStr = m.price !== undefined ? ` - ₹${m.price}` : '';
       const stockStr = m.quantity !== undefined ? ` [Stock: ${m.quantity}]` : '';
-      optionsHtml += `<option value="${m.id}">${m.name}${companyStr}${priceStr}${stockStr}</option>`;
-    });
+      return `
+        <label class="multi-select-option" onclick="toggleCustMedSelection('${m.id}', event)">
+          <input type="checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCustMedSelection('${m.id}', event)">
+          <span>${m.name}${companyStr}${priceStr}${stockStr}</span>
+        </label>
+      `;
+    }).join('');
 
-    medSelect.innerHTML = optionsHtml;
-    if (currentVal) medSelect.value = currentVal;
+    updateCustMedUI();
   } catch (err) {
     console.error('Error populating customer medicine dropdown:', err);
   }
 }
+
+document.addEventListener('click', function(e) {
+  const container = document.getElementById('custMedSelectContainer');
+  if (container && !container.contains(e.target)) {
+    const dropdown = document.getElementById('custMedDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+  }
+});
 
 function renderCustomers() {
   populateCustMedicineDropdown();
@@ -418,26 +547,15 @@ function renderCustomers() {
   }).join('');
 }
 
-function toggleCustMedFields() {
-  const medId = document.getElementById('custMedicine').value;
-  const fields = document.getElementById('custMedFields');
-  if (fields) {
-    fields.style.display = medId ? 'flex' : 'none';
-  }
-}
-
 function openCustomerModal(id) {
   document.getElementById('customerForm').reset();
   document.getElementById('custEditId').value = '';
   document.getElementById('custModalTitle').textContent = 'Add Customer';
+  selectedCustMedicines = {};
 
   populateCustMedicineDropdown();
-  const medFields = document.getElementById('custMedFields');
-  if (medFields) medFields.style.display = 'none';
-  const qtyInput = document.getElementById('custMedQty');
-  if (qtyInput) qtyInput.value = 1;
-  const daysInput = document.getElementById('custMedDays');
-  if (daysInput) daysInput.value = 7;
+  const dropdown = document.getElementById('custMedDropdown');
+  if (dropdown) dropdown.style.display = 'none';
 
   if (id) {
     const cust = DB.get('customers').find(c => c.id === id);
@@ -478,64 +596,61 @@ function saveCustomer(e) {
 
   DB.set('customers', customers);
 
-  // Handle selected medicine if provided
-  const medSelect = document.getElementById('custMedicine');
-  const selectedMedId = medSelect ? medSelect.value : '';
-  if (selectedMedId) {
+  // Save ALL selected medicines for this customer
+  const selectedMeds = Object.values(selectedCustMedicines);
+  if (selectedMeds.length > 0) {
     let medicines = DB.get('medicines');
-    const med = medicines.find(m => m.id === selectedMedId);
-    if (med) {
-      const qtyInput = document.getElementById('custMedQty');
-      const daysInput = document.getElementById('custMedDays');
-      const qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
-      const days = parseInt(daysInput ? daysInput.value : 7) || 7;
-      const todayStr = new Date().toISOString().split('T')[0];
+    let purchases = DB.get('purchases');
+    let reminders = DB.get('reminders');
+    const todayStr = new Date().toISOString().split('T')[0];
 
-      const finishDateObj = new Date();
-      finishDateObj.setDate(finishDateObj.getDate() + days);
-      const finishDateStr = finishDateObj.toISOString().split('T')[0];
+    selectedMeds.forEach(medConfig => {
+      const med = medicines.find(m => m.id === medConfig.id);
+      if (med) {
+        const qty = parseInt(medConfig.quantity) || 1;
+        const days = parseInt(medConfig.daysSupply) || 7;
 
-      // Add purchase record
-      const purchase = {
-        id: DB.generateId(),
-        customerId: customerId,
-        medicineId: med.id,
-        medicineName: med.name,
-        purchaseDate: todayStr,
-        quantity: qty,
-        daysSupply: days,
-        finishDate: finishDateStr,
-        billId: ''
-      };
-      let purchases = DB.get('purchases');
-      purchases.push(purchase);
-      DB.set('purchases', purchases);
+        const finishDateObj = new Date();
+        finishDateObj.setDate(finishDateObj.getDate() + days);
+        const finishDateStr = finishDateObj.toISOString().split('T')[0];
 
-      // Add reminder
-      const reminder = {
-        id: DB.generateId(),
-        customerId: customerId,
-        customerName: custData.name,
-        customerMobile: custData.mobile,
-        medicineId: med.id,
-        medicineName: med.name,
-        finishDate: finishDateStr,
-        status: 'pending',
-        createdAt: todayStr
-      };
-      let reminders = DB.get('reminders');
-      reminders.push(reminder);
-      DB.set('reminders', reminders);
+        // Add purchase record
+        purchases.push({
+          id: DB.generateId(),
+          customerId: customerId,
+          medicineId: med.id,
+          medicineName: med.name,
+          purchaseDate: todayStr,
+          quantity: qty,
+          daysSupply: days,
+          finishDate: finishDateStr,
+          billId: ''
+        });
 
-      // Update medicine stock
-      const medIdx = medicines.findIndex(m => m.id === selectedMedId);
-      if (medIdx !== -1) {
-        medicines[medIdx].quantity = Math.max(0, medicines[medIdx].quantity - qty);
-        DB.set('medicines', medicines);
+        // Add reminder
+        reminders.push({
+          id: DB.generateId(),
+          customerId: customerId,
+          customerName: custData.name,
+          customerMobile: custData.mobile,
+          medicineId: med.id,
+          medicineName: med.name,
+          finishDate: finishDateStr,
+          status: 'pending',
+          createdAt: todayStr
+        });
+
+        // Deduct medicine stock
+        med.quantity = Math.max(0, med.quantity - qty);
       }
-    }
+    });
+
+    DB.set('purchases', purchases);
+    DB.set('reminders', reminders);
+    DB.set('medicines', medicines);
   }
 
+  selectedCustMedicines = {};
   closeModal('customerModal');
   renderCustomers();
   updateBadges();

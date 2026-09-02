@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=2.0.0">
+  <link rel="stylesheet" href="css/style.css?v=3.0.0">
 </head>
 <body>
 
@@ -449,20 +449,27 @@
             <textarea id="custAddress" class="form-control" placeholder="Enter full address"></textarea>
           </div>
           <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color, #e5e7eb);">
-            <label>Select Medicine (Optional)</label>
-            <select id="custMedicine" class="form-control" onchange="toggleCustMedFields()">
-              <option value="">-- Select Medicine (Optional) --</option>
-            </select>
+            <label>Select Medicines (Optional)</label>
+            <div id="custMedSelectContainer" class="multi-select-container">
+              <div id="custMedTrigger" class="multi-select-trigger" onclick="toggleCustMedDropdown(event)">
+                <div id="custMedSelectedChips" class="selected-chips">
+                  <span class="placeholder-text">-- Select Medicines (Optional) --</span>
+                </div>
+                <span class="dropdown-arrow">&#9662;</span>
+              </div>
+              <div id="custMedDropdown" class="multi-select-dropdown" style="display:none;">
+                <div class="multi-select-search">
+                  <input type="text" id="custMedSearch" placeholder="Search medicines..." oninput="filterCustMedOptions()">
+                </div>
+                <div id="custMedOptionsList" class="multi-select-options">
+                  <!-- Checkbox list rendered by JS -->
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="custMedFields" class="form-row" style="display:none;">
-            <div class="form-group">
-              <label>Quantity</label>
-              <input type="number" id="custMedQty" class="form-control" min="1" value="1" placeholder="Qty">
-            </div>
-            <div class="form-group">
-              <label>Days Supply (Reminder)</label>
-              <input type="number" id="custMedDays" class="form-control" min="1" value="7" placeholder="e.g. 7 days">
-            </div>
+
+          <div id="custSelectedMedsList" style="display:none; margin-top:12px;">
+            <!-- JS renders selected medicine cards with Quantity & Days Supply inputs -->
           </div>
           <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
             <button type="button" class="btn btn-outline" onclick="closeModal('customerModal')">Cancel</button>
@@ -554,7 +561,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=2.0.0"></script>
-  <script src="js/app.js?v=2.0.0"></script>
+  <script src="js/data.js?v=3.0.0"></script>
+  <script src="js/app.js?v=3.0.0"></script>
 </body>
 </html>
