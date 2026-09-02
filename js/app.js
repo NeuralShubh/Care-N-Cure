@@ -350,12 +350,42 @@ function deleteMedicine(id) {
 function populateCustMedicineDropdown() {
   const medSelect = document.getElementById('custMedicine');
   if (!medSelect) return;
-  const medicines = DB.get('medicines') || [];
-  const sorted = [...medicines].sort((a, b) => a.name.localeCompare(b.name));
-  const currentVal = medSelect.value;
-  medSelect.innerHTML = '<option value="">-- Select Medicine (Optional) --</option>' +
-    sorted.map(m => `<option value="${m.id}">${m.name} (${m.company}) - ₹${m.price} [Stock: ${m.quantity}]</option>`).join('');
-  if (currentVal) medSelect.value = currentVal;
+
+  try {
+    let medicines = DB.get('medicines');
+    if (!Array.isArray(medicines) || medicines.length === 0) {
+      medicines = [
+        { id: 'med1', name: 'Paracetamol 500mg', company: 'Cipla', category: 'Analgesic', price: 25, quantity: 200, expiryDate: '2027-06-15', lowStockThreshold: 20 },
+        { id: 'med2', name: 'Amoxicillin 250mg', company: 'Sun Pharma', category: 'Antibiotic', price: 85, quantity: 150, expiryDate: '2026-12-20', lowStockThreshold: 15 },
+        { id: 'med3', name: 'Cetirizine 10mg', company: 'Cipla', category: 'Antihistamine', price: 35, quantity: 120, expiryDate: '2027-03-10', lowStockThreshold: 10 },
+        { id: 'med4', name: 'Metformin 500mg', company: 'Dr. Reddy\'s', category: 'Antidiabetic', price: 45, quantity: 80, expiryDate: '2026-09-30', lowStockThreshold: 10 },
+        { id: 'med5', name: 'Omeprazole 20mg', company: 'AstraZeneca', category: 'Antacid', price: 65, quantity: 5, expiryDate: '2026-08-15', lowStockThreshold: 10 },
+        { id: 'med6', name: 'Atorvastatin 10mg', company: 'Pfizer', category: 'Cardiovascular', price: 120, quantity: 60, expiryDate: '2027-01-25', lowStockThreshold: 10 },
+        { id: 'med7', name: 'Azithromycin 500mg', company: 'Zydus', category: 'Antibiotic', price: 95, quantity: 8, expiryDate: '2025-07-01', lowStockThreshold: 10 },
+        { id: 'med8', name: 'Dolo 650', company: 'Micro Labs', category: 'Analgesic', price: 30, quantity: 250, expiryDate: '2027-09-20', lowStockThreshold: 20 },
+        { id: 'med9', name: 'Pan-D', company: 'Alkem', category: 'Antacid', price: 110, quantity: 45, expiryDate: '2027-04-15', lowStockThreshold: 10 },
+        { id: 'med10', name: 'Crocin Advance', company: 'GSK', category: 'Analgesic', price: 28, quantity: 180, expiryDate: '2027-11-10', lowStockThreshold: 15 }
+      ];
+      DB.set('medicines', medicines);
+    }
+
+    const validMedicines = medicines.filter(m => m && m.id && m.name);
+    validMedicines.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+
+    const currentVal = medSelect.value;
+    let optionsHtml = '<option value="">-- Select Medicine (Optional) --</option>';
+    validMedicines.forEach(m => {
+      const companyStr = m.company ? ` (${m.company})` : '';
+      const priceStr = m.price !== undefined ? ` - ₹${m.price}` : '';
+      const stockStr = m.quantity !== undefined ? ` [Stock: ${m.quantity}]` : '';
+      optionsHtml += `<option value="${m.id}">${m.name}${companyStr}${priceStr}${stockStr}</option>`;
+    });
+
+    medSelect.innerHTML = optionsHtml;
+    if (currentVal) medSelect.value = currentVal;
+  } catch (err) {
+    console.error('Error populating customer medicine dropdown:', err);
+  }
 }
 
 function renderCustomers() {
