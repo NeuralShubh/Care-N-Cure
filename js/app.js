@@ -573,12 +573,15 @@ function viewCustomerHistory(customerId) {
         <p style="margin:0 0 4px 0; color:var(--text-secondary); font-size:14px;"><strong>Mobile:</strong> ${customer.mobile}</p>
         <p style="margin:0; color:var(--text-secondary); font-size:14px;"><strong>Address:</strong> ${customer.address || 'N/A'}</p>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
-          &#9998; Edit Customer
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
+          &#9998; Edit
         </button>
         <button class="btn btn-danger btn-sm" onclick="closeModal('custHistoryModal'); deleteCustomer('${customer.id}')" title="Delete Customer">
-          &#128465; Delete Customer
+          &#128465; Delete
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal')" title="Close">
+          Close
         </button>
       </div>
     </div>
@@ -615,7 +618,13 @@ function viewCustomerHistory(customerId) {
     `;
   }
 
-  content.innerHTML = customerHeaderHtml + purchaseTableHtml;
+  const modalFooterHtml = `
+    <div style="display:flex; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color, #e5e7eb);">
+      <button class="btn btn-outline" onclick="closeModal('custHistoryModal')">Close</button>
+    </div>
+  `;
+
+  content.innerHTML = customerHeaderHtml + purchaseTableHtml + modalFooterHtml;
   document.getElementById('custHistoryModal').classList.add('active');
 }
 
