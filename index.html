@@ -448,6 +448,22 @@
             <label>Address</label>
             <textarea id="custAddress" class="form-control" placeholder="Enter full address"></textarea>
           </div>
+          <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color, #e5e7eb);">
+            <label>Select Medicine (Optional)</label>
+            <select id="custMedicine" class="form-control" onchange="toggleCustMedFields()">
+              <option value="">-- Select Medicine --</option>
+            </select>
+          </div>
+          <div id="custMedFields" class="form-row" style="display:none;">
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="custMedQty" class="form-control" min="1" value="1" placeholder="Qty">
+            </div>
+            <div class="form-group">
+              <label>Days Supply (Reminder)</label>
+              <input type="number" id="custMedDays" class="form-control" min="1" value="7" placeholder="e.g. 7 days">
+            </div>
+          </div>
           <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
             <button type="button" class="btn btn-outline" onclick="closeModal('customerModal')">Cancel</button>
             <button type="submit" class="btn btn-primary">Save Customer</button>

@@ -381,10 +381,32 @@ function renderCustomers() {
   }).join('');
 }
 
+function toggleCustMedFields() {
+  const medId = document.getElementById('custMedicine').value;
+  const fields = document.getElementById('custMedFields');
+  if (fields) {
+    fields.style.display = medId ? 'flex' : 'none';
+  }
+}
+
 function openCustomerModal(id) {
   document.getElementById('customerForm').reset();
   document.getElementById('custEditId').value = '';
   document.getElementById('custModalTitle').textContent = 'Add Customer';
+
+  const medSelect = document.getElementById('custMedicine');
+  if (medSelect) {
+    const medicines = DB.get('medicines');
+    medSelect.innerHTML = '<option value="">-- Select Medicine (Optional) --</option>' +
+      medicines.map(m => `<option value="${m.id}">${m.name} (${m.company}) - ₹${m.price} [Stock: ${m.quantity}]</option>`).join('');
+  }
+  const medFields = document.getElementById('custMedFields');
+  if (medFields) medFields.style.display = 'none';
+  const qtyInput = document.getElementById('custMedQty');
+  if (qtyInput) qtyInput.value = 1;
+  const daysInput = document.getElementById('custMedDays');
+  if (daysInput) daysInput.value = 7;
+
   if (id) {
     const cust = DB.get('customers').find(c => c.id === id);
     if (cust) {
@@ -403,6 +425,7 @@ function editCustomer(id) { openCustomerModal(id); }
 function saveCustomer(e) {
   e.preventDefault();
   const editId = document.getElementById('custEditId').value;
+  let customerId = editId;
   const custData = {
     name: document.getElementById('custName').value.trim(),
     mobile: document.getElementById('custMobile').value.trim(),
@@ -415,14 +438,75 @@ function saveCustomer(e) {
     if (idx !== -1) customers[idx] = { ...customers[idx], ...custData };
     showToast('Customer updated successfully', 'success');
   } else {
-    custData.id = DB.generateId();
+    customerId = DB.generateId();
+    custData.id = customerId;
     customers.push(custData);
     showToast('Customer added successfully', 'success');
   }
 
   DB.set('customers', customers);
+
+  // Handle selected medicine if provided
+  const medSelect = document.getElementById('custMedicine');
+  const selectedMedId = medSelect ? medSelect.value : '';
+  if (selectedMedId) {
+    let medicines = DB.get('medicines');
+    const med = medicines.find(m => m.id === selectedMedId);
+    if (med) {
+      const qtyInput = document.getElementById('custMedQty');
+      const daysInput = document.getElementById('custMedDays');
+      const qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+      const days = parseInt(daysInput ? daysInput.value : 7) || 7;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const finishDateObj = new Date();
+      finishDateObj.setDate(finishDateObj.getDate() + days);
+      const finishDateStr = finishDateObj.toISOString().split('T')[0];
+
+      // Add purchase record
+      const purchase = {
+        id: DB.generateId(),
+        customerId: customerId,
+        medicineId: med.id,
+        medicineName: med.name,
+        purchaseDate: todayStr,
+        quantity: qty,
+        daysSupply: days,
+        finishDate: finishDateStr,
+        billId: ''
+      };
+      let purchases = DB.get('purchases');
+      purchases.push(purchase);
+      DB.set('purchases', purchases);
+
+      // Add reminder
+      const reminder = {
+        id: DB.generateId(),
+        customerId: customerId,
+        customerName: custData.name,
+        customerMobile: custData.mobile,
+        medicineId: med.id,
+        medicineName: med.name,
+        finishDate: finishDateStr,
+        status: 'pending',
+        createdAt: todayStr
+      };
+      let reminders = DB.get('reminders');
+      reminders.push(reminder);
+      DB.set('reminders', reminders);
+
+      // Update medicine stock
+      const medIdx = medicines.findIndex(m => m.id === selectedMedId);
+      if (medIdx !== -1) {
+        medicines[medIdx].quantity = Math.max(0, medicines[medIdx].quantity - qty);
+        DB.set('medicines', medicines);
+      }
+    }
+  }
+
   closeModal('customerModal');
   renderCustomers();
+  updateBadges();
 }
 
 function deleteCustomer(id) {
