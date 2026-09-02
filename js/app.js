@@ -403,24 +403,17 @@ function renderCustomers() {
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
     return;
   }
 
   table.innerHTML = customers.map(c => {
     const purchaseCount = purchases.filter(p => p.customerId === c.id).length;
-    return `<tr>
+    return `<tr onclick="viewCustomerHistory('${c.id}')" style="cursor:pointer;" title="Click to view details and actions">
       <td><strong>${c.name}</strong></td>
       <td>${c.mobile}</td>
       <td>${c.address || '-'}</td>
       <td><span class="badge badge-info">${purchaseCount} purchases</span></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-icon btn-view" onclick="viewCustomerHistory('${c.id}')" title="View History">&#128065;</button>
-          <button class="btn-icon btn-edit" onclick="editCustomer('${c.id}')" title="Edit">&#9998;</button>
-          <button class="btn-icon btn-delete" onclick="deleteCustomer('${c.id}')" title="Delete">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   }).join('');
 }
@@ -562,22 +555,41 @@ function deleteCustomer(id) {
   });
 }
 
+function viewCustomerDetails(customerId) { viewCustomerHistory(customerId); }
+
 function viewCustomerHistory(customerId) {
   const customer = DB.get('customers').find(c => c.id === customerId);
   if (!customer) return;
 
   const purchases = DB.get('purchases').filter(p => p.customerId === customerId);
-  document.getElementById('custHistoryTitle').textContent = `Purchase History - ${customer.name}`;
+  document.getElementById('custHistoryTitle').textContent = `Customer Details`;
 
   const content = document.getElementById('custHistoryContent');
-  if (purchases.length === 0) {
-    content.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128196;</div><h3>No purchases yet</h3><p>This customer has no purchase records.</p></div>';
-  } else {
-    content.innerHTML = `
-      <div style="margin-bottom:16px;">
-        <p><strong>Customer:</strong> ${customer.name}</p>
-        <p><strong>Mobile:</strong> ${customer.mobile}</p>
+  
+  const customerHeaderHtml = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border-color, #e5e7eb); flex-wrap:wrap; gap:12px;">
+      <div>
+        <h3 style="margin:0 0 6px 0; font-size:18px; color:var(--text-primary); font-weight:700;">${customer.name}</h3>
+        <p style="margin:0 0 4px 0; color:var(--text-secondary); font-size:14px;"><strong>Mobile:</strong> ${customer.mobile}</p>
+        <p style="margin:0; color:var(--text-secondary); font-size:14px;"><strong>Address:</strong> ${customer.address || 'N/A'}</p>
       </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
+          &#9998; Edit Customer
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="closeModal('custHistoryModal'); deleteCustomer('${customer.id}')" title="Delete Customer">
+          &#128465; Delete Customer
+        </button>
+      </div>
+    </div>
+  `;
+
+  let purchaseTableHtml = '';
+  if (purchases.length === 0) {
+    purchaseTableHtml = '<div class="empty-state" style="padding:20px;"><div class="empty-icon">&#128196;</div><h3>No purchase history</h3><p>This customer has not purchased any medicines yet.</p></div>';
+  } else {
+    purchaseTableHtml = `
+      <h4 style="margin:0 0 12px 0; font-size:15px; color:var(--text-primary);">Purchase History</h4>
       <div class="table-container">
         <table class="data-table">
           <thead><tr><th>Medicine</th><th>Qty</th><th>Purchase Date</th><th>Days Supply</th><th>Finish Date</th><th>Status</th></tr></thead>
@@ -589,7 +601,7 @@ function viewCustomerHistory(customerId) {
               else if (daysLeft <= 3) status = '<span class="badge badge-warning">Finishing Soon</span>';
               else status = '<span class="badge badge-success">Active</span>';
               return `<tr>
-                <td>${p.medicineName}</td>
+                <td><strong>${p.medicineName}</strong></td>
                 <td>${p.quantity}</td>
                 <td>${formatDate(p.purchaseDate)}</td>
                 <td>${p.daysSupply} days</td>
@@ -602,6 +614,8 @@ function viewCustomerHistory(customerId) {
       </div>
     `;
   }
+
+  content.innerHTML = customerHeaderHtml + purchaseTableHtml;
   document.getElementById('custHistoryModal').classList.add('active');
 }
 
