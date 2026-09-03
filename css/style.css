@@ -731,6 +731,10 @@ textarea.form-control {
   transition: var(--transition);
 }
 
+#confirmModal {
+  z-index: 3000;
+}
+
 .modal-overlay.active {
   opacity: 1;
   visibility: visible;

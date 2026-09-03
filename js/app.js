@@ -313,6 +313,7 @@ function openDeleteCategoryModal() {
 }
 
 function deleteCategory(catName) {
+  closeModal('deleteCategoryModal');
   showConfirm('Delete Category', `Are you sure you want to delete the category "${catName}"?`, function() {
     let customCats = DB.get('customCategories') || [];
     customCats = customCats.filter(c => c !== catName);
@@ -331,7 +332,6 @@ function deleteCategory(catName) {
     populateMedCategoryDropdown();
     populateMedCategoryFilter();
     renderMedicines();
-    openDeleteCategoryModal();
     showToast(`Category "${catName}" deleted`, 'success');
   });
 }
