@@ -1,4 +1,4 @@
-// v16.0.0 - Care N Cure App Logic
+// v17.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -803,6 +803,7 @@ function saveCustomer(e) {
     DB.set('medicines', medicines);
   }
 
+  syncCustomerReminders();
   selectedCustMedicines = {};
   closeModal('customerModal');
   renderCustomers();
@@ -817,6 +818,9 @@ function deleteCustomer(id) {
     let purchases = DB.get('purchases');
     purchases = purchases.filter(p => p.customerId !== id);
     DB.set('purchases', purchases);
+    let reminders = DB.get('reminders') || [];
+    reminders = reminders.filter(r => r.customerId !== id);
+    DB.set('reminders', reminders);
     showToast('Customer deleted', 'success');
     renderCustomers();
     updateBadges();
@@ -901,13 +905,90 @@ function viewCustomerHistory(customerId) {
 
 
 
-// ===================== REMINDERS =====================
-// ===================== REMINDERS =====================
-function autoGenerateReminders() {
-  if (!DB.getConfig('defaultRemindersCleaned_v6')) {
-    DB.set('reminders', []);
-    DB.setConfig('defaultRemindersCleaned_v6', true);
+function syncCustomerReminders() {
+  const customers = DB.get('customers') || [];
+  const purchases = DB.get('purchases') || [];
+  let reminders = DB.get('reminders') || [];
+
+  let changed = false;
+
+  customers.forEach(c => {
+    const custPurchases = purchases.filter(p => p.customerId === c.id);
+
+    if (custPurchases.length > 0) {
+      custPurchases.forEach(p => {
+        let existing = reminders.find(r => r.customerId === c.id && (r.medicineId === p.medicineId || r.medicineName === p.medicineName));
+        if (!existing) {
+          const defaultDateStr = p.finishDate || (function() {
+            const d = new Date();
+            d.setDate(d.getDate() + 7);
+            return d.toISOString().split('T')[0];
+          })();
+          const defaultMsg = `Hello ${c.name}, your ${p.medicineName} tablets are about to finish on ${formatDate(defaultDateStr)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+
+          reminders.push({
+            id: DB.generateId(),
+            customerId: c.id,
+            customerName: c.name,
+            customerMobile: c.mobile,
+            medicineId: p.medicineId,
+            medicineName: p.medicineName,
+            finishDate: defaultDateStr,
+            customMessage: defaultMsg,
+            isCustomMessage: false,
+            status: 'pending',
+            createdAt: new Date().toISOString().split('T')[0]
+          });
+          changed = true;
+        } else {
+          if (existing.customerName !== c.name || existing.customerMobile !== c.mobile) {
+            existing.customerName = c.name;
+            existing.customerMobile = c.mobile;
+            changed = true;
+          }
+        }
+      });
+    } else {
+      let existing = reminders.find(r => r.customerId === c.id);
+      if (!existing) {
+        const defaultDateStr = (function() {
+          const d = new Date();
+          d.setDate(d.getDate() + 7);
+          return d.toISOString().split('T')[0];
+        })();
+        const defaultMsg = `Hello ${c.name}, we hope you are doing well. Please let us know if you need any medicines or health assistance. Thank you. – Care N Cure`;
+
+        reminders.push({
+          id: DB.generateId(),
+          customerId: c.id,
+          customerName: c.name,
+          customerMobile: c.mobile,
+          medicineId: '',
+          medicineName: 'General Medicine Supply',
+          finishDate: defaultDateStr,
+          customMessage: defaultMsg,
+          isCustomMessage: false,
+          status: 'pending',
+          createdAt: new Date().toISOString().split('T')[0]
+        });
+        changed = true;
+      } else {
+        if (existing.customerName !== c.name || existing.customerMobile !== c.mobile) {
+          existing.customerName = c.name;
+          existing.customerMobile = c.mobile;
+          changed = true;
+        }
+      }
+    }
+  });
+
+  if (changed) {
+    DB.set('reminders', reminders);
   }
+}
+
+function autoGenerateReminders() {
+  syncCustomerReminders();
 }
 
 function onAddRemCustomerChange() {
@@ -1080,6 +1161,7 @@ function switchReminderTab(tab) {
 }
 
 function renderReminders() {
+  syncCustomerReminders();
   const searchInput = document.getElementById('remSearch');
   const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
