@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=12.0.0">
+  <link rel="stylesheet" href="css/style.css?v=13.0.0">
 </head>
 <body>
 
@@ -18,7 +18,7 @@
         <h1>Care N Cure</h1>
         <p>Medical Shop Management System</p>
       </div>
-      <form id="loginForm">
+      <form id="loginForm" onsubmit="return handleLoginSubmit(event)">
         <div class="form-group">
           <label>Select User <span class="required">*</span></label>
           <select id="loginUser" class="form-control" required>
@@ -35,7 +35,7 @@
         <div class="form-group" style="font-size:12px;color:var(--text-muted)">
           Default password: <strong>admin123</strong>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg">Sign In</button>
+        <button type="button" class="btn btn-primary btn-block btn-lg" onclick="handleLoginSubmit(event)">Sign In</button>
       </form>
     </div>
   </div>
@@ -500,7 +500,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=12.0.0"></script>
-  <script src="js/app.js?v=12.0.0"></script>
+  <script src="js/data.js?v=13.0.0"></script>
+  <script src="js/app.js?v=13.0.0"></script>
 </body>
 </html>

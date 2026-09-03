@@ -1,11 +1,53 @@
-// v12.0.0 - Care N Cure App Logic
+// v13.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
 let currentReminderTab = 'pending';
 let currentWhatsAppReminder = null;
 
-// ===================== LOGIN =====================
+function handleLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const userSelect = document.getElementById('loginUser');
+  const passInput = document.getElementById('loginPassword');
+
+  const userId = userSelect ? userSelect.value : '';
+  const password = passInput ? passInput.value : '';
+
+  if (!userId) {
+    showToast('Please select a user', 'error');
+    return false;
+  }
+  if (password !== 'admin123') {
+    showToast('Invalid password. Default is admin123', 'error');
+    return false;
+  }
+
+  let users = DB.get('employees');
+  if (!Array.isArray(users) || users.length === 0) {
+    users = [
+      { id: 'emp1', name: 'Dr. Rajesh Kumar', mobile: '9876543210', address: '123 Medical Lane, Mumbai', designation: 'Owner', joiningDate: '2023-01-15', salary: 50000, isOwner: true },
+      { id: 'emp2', name: 'Priya Sharma', mobile: '9876543211', address: '456 Health St, Mumbai', designation: 'Pharmacist', joiningDate: '2023-06-01', salary: 25000, isOwner: false },
+      { id: 'emp3', name: 'Amit Patel', mobile: '9876543212', address: '789 Care Ave, Mumbai', designation: 'Cashier', joiningDate: '2024-01-10', salary: 20000, isOwner: false }
+    ];
+    DB.set('employees', users);
+  }
+
+  const user = users.find(u => u.id === userId) || users[0];
+  currentUser = user;
+  DB.setConfig('currentUser', user);
+
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appLayout').style.display = 'flex';
+
+  const nameElem = document.getElementById('sidebarUserName');
+  if (nameElem) nameElem.textContent = user.name;
+  const avatarElem = document.getElementById('sidebarAvatar');
+  if (avatarElem) avatarElem.textContent = user.name.charAt(0).toUpperCase();
+
+  initApp();
+  return false;
+}
+
 function initLogin() {
   if (typeof seedData === 'function') seedData();
   let users = DB.get('employees');
@@ -19,32 +61,9 @@ function initLogin() {
   }
 
   const sel = document.getElementById('loginUser');
-  if (sel) {
+  if (sel && sel.options.length <= 1) {
     sel.innerHTML = '<option value="">-- Select User --</option>' +
       users.map(u => `<option value="${u.id}">${u.name} (${u.designation})</option>`).join('');
-  }
-
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.onsubmit = function(e) {
-      e.preventDefault();
-      const currentUsers = DB.get('employees') || users;
-      const userId = document.getElementById('loginUser').value;
-      const password = document.getElementById('loginPassword').value;
-      if (!userId) { showToast('Please select a user', 'error'); return; }
-      if (password !== 'admin123') { showToast('Invalid password', 'error'); return; }
-
-      const user = currentUsers.find(u => u.id === userId) || currentUsers[0];
-      currentUser = user;
-      DB.setConfig('currentUser', user);
-
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('appLayout').style.display = 'flex';
-      document.getElementById('sidebarUserName').textContent = user.name;
-      document.getElementById('sidebarAvatar').textContent = user.name.charAt(0).toUpperCase();
-
-      initApp();
-    };
   }
 }
 
@@ -108,8 +127,8 @@ function closeSidebar() {
 
 // ===================== INIT =====================
 function initApp() {
+  navigateTo('dashboard');
   autoGenerateReminders();
-  refreshCurrentPage();
   updateBadges();
 }
 
