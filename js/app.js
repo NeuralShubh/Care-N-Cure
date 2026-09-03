@@ -573,13 +573,10 @@ function populateCustMedicineDropdown() {
 
     optionsList.innerHTML = validMedicines.map(m => {
       const isChecked = !!selectedCustMedicines[m.id];
-      const companyStr = m.company ? ` (${m.company})` : '';
-      const priceStr = m.price !== undefined ? ` - ₹${m.price}` : '';
-      const stockStr = m.quantity !== undefined ? ` [Stock: ${m.quantity}]` : '';
       return `
         <label class="multi-select-option" onclick="toggleCustMedSelection('${m.id}', event)">
           <input type="checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleCustMedSelection('${m.id}', event)">
-          <span>${m.name}${companyStr}${priceStr}${stockStr}</span>
+          <span>${m.name}</span>
         </label>
       `;
     }).join('');
