@@ -1,4 +1,4 @@
-// v14.0.0 - Care N Cure App Logic
+// v15.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -972,6 +972,18 @@ function saveNewReminder(e) {
   showToast('Reminder added successfully', 'success');
 }
 
+function deleteReminder(id, e) {
+  if (e) e.stopPropagation();
+  showConfirm('Delete Reminder', 'Are you sure you want to delete this reminder?', function() {
+    let reminders = DB.get('reminders') || [];
+    reminders = reminders.filter(r => r.id !== id);
+    DB.set('reminders', reminders);
+    showToast('Reminder deleted successfully', 'success');
+    updateBadges();
+    renderReminders();
+  });
+}
+
 function switchReminderTab(tab) {
   currentReminderTab = tab;
   document.querySelectorAll('#page-reminders .tab').forEach(t => {
@@ -1010,12 +1022,12 @@ function renderReminders() {
       actionBtns = `
         <div style="display:flex; gap:6px;">
           <button class="btn btn-success btn-sm" onclick="openWhatsAppReminder('${r.customerId}', '${r.medicineId}', '${r.finishDate}')">&#128172; Send</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')" title="Delete Reminder">&#128465;</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
         </div>
       `;
     } else {
       actionBtns = `
-        <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')" title="Delete Reminder">&#128465;</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
       `;
     }
     const defaultMsg = `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
