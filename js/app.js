@@ -60,7 +60,8 @@ function navigateTo(page) {
     dashboard: ['Dashboard', "Welcome back! Here's your overview."],
     medicines: ['Medicines', 'Manage medicine inventory.'],
     customers: ['Customers', 'Manage customer records.'],
-    reminders: ['Reminders', 'Manage patient reminders.']
+    reminders: ['Reminders', 'Manage patient reminders.'],
+    messages: ['Messages', 'Manage and customize message templates.']
   };
   if (titles[page]) {
     document.getElementById('pageTitle').textContent = titles[page][0];
@@ -77,6 +78,7 @@ function refreshCurrentPage() {
     case 'medicines': renderMedicines(); break;
     case 'customers': renderCustomers(); break;
     case 'reminders': renderReminders(); break;
+    case 'messages': renderMessages(); break;
   }
 }
 
@@ -1175,6 +1177,31 @@ function showConfirm(title, message, callback) {
     closeModal('confirmModal');
     callback();
   };
+// ===================== MESSAGES =====================
+function renderMessages() {
+  const reminderTemplateInput = document.getElementById('msgTemplateReminder');
+  const caringTemplateInput = document.getElementById('msgTemplateCaring');
+
+  const templates = DB.get('messageTemplates') || {
+    reminder: 'Hello {customerName}, your {medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.',
+    caring: 'Hello {customerName}, we hope you are doing well. You recently purchased {medicineName} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure'
+  };
+
+  if (reminderTemplateInput) reminderTemplateInput.value = templates.reminder || '';
+  if (caringTemplateInput) caringTemplateInput.value = templates.caring || '';
+}
+
+function saveMessageSectionTemplates() {
+  const reminderTemplateInput = document.getElementById('msgTemplateReminder');
+  const caringTemplateInput = document.getElementById('msgTemplateCaring');
+
+  const templates = {
+    reminder: reminderTemplateInput ? reminderTemplateInput.value.trim() : '',
+    caring: caringTemplateInput ? caringTemplateInput.value.trim() : ''
+  };
+
+  DB.set('messageTemplates', templates);
+  showToast('Message templates saved successfully', 'success');
 }
 
 // ===================== INIT =====================

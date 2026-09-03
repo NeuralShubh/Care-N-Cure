@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=8.0.0">
+  <link rel="stylesheet" href="css/style.css?v=9.0.0">
 </head>
 <body>
 
@@ -70,6 +70,9 @@
         <a class="nav-item" data-page="reminders" onclick="navigateTo('reminders')">
           <span class="nav-icon">&#9857;</span> Reminders
           <span id="navRemAlerts" class="nav-badge" style="display:none;"></span>
+        </a>
+        <a class="nav-item" data-page="messages" onclick="navigateTo('messages')">
+          <span class="nav-icon">&#128172;</span> Messages
         </a>
       </nav>
       <div class="sidebar-footer">
@@ -240,6 +243,37 @@
           <div class="card">
             <div class="card-body">
               <div id="reminderList" class="reminder-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== MESSAGES ========== -->
+        <section id="page-messages" class="page-section">
+          <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <div class="card-body">
+              <h3 style="font-size:16px; margin-bottom:6px; color:var(--text-primary);">WhatsApp Reminder Message Template</h3>
+              <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+                Customize default reminder messages sent to customers via WhatsApp.
+              </p>
+
+              <div class="form-group" style="margin-bottom:24px;">
+                <label style="font-weight:600; margin-bottom:6px; display:block;">Reminder Message Template</label>
+                <textarea id="msgTemplateReminder" class="form-control" rows="4" placeholder="Enter default reminder message template..."></textarea>
+              </div>
+
+              <h3 style="font-size:16px; margin-bottom:6px; color:var(--text-primary); border-top:1px solid var(--border-light); padding-top:20px;">Customer Caring Message Template</h3>
+              <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+                Customize default caring messages sent to customers from Customer section.
+              </p>
+
+              <div class="form-group" style="margin-bottom:20px;">
+                <label style="font-weight:600; margin-bottom:6px; display:block;">Caring Message Template</label>
+                <textarea id="msgTemplateCaring" class="form-control" rows="4" placeholder="Enter default customer caring message template..."></textarea>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="saveMessageSectionTemplates()">Save Message Templates</button>
+              </div>
             </div>
           </div>
         </section>
@@ -463,7 +497,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=8.0.0"></script>
-  <script src="js/app.js?v=8.0.0"></script>
+  <script src="js/data.js?v=9.0.0"></script>
+  <script src="js/app.js?v=9.0.0"></script>
 </body>
 </html>
