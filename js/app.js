@@ -1,4 +1,4 @@
-// v18.0.0 - Care N Cure App Logic
+// v19.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -1201,7 +1201,16 @@ function sendWhatsAppReminderDirect(remId, e) {
   if (!rem) return;
 
   const msgInput = document.getElementById(`remMsgInput_${remId}`);
-  const messageText = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : (rem.customMessage || `Hello ${rem.customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`);
+  let messageText = '';
+
+  if (rem.isCustomMessage && rem.customMessage) {
+    messageText = rem.customMessage;
+  } else if (msgInput && msgInput.value.trim() && rem.isCustomMessage) {
+    messageText = msgInput.value.trim();
+  } else {
+    const activeTpl = getActiveMarketingTemplate();
+    messageText = activeTpl.message.replace(/{customerName}/g, rem.customerName || 'Customer');
+  }
 
   const cleanMobile = (rem.customerMobile || '').replace(/\D/g, '');
   if (!cleanMobile) {
@@ -1219,7 +1228,7 @@ function sendWhatsAppReminderDirect(remId, e) {
 
   updateBadges();
   renderReminders();
-  showToast('WhatsApp opened & marked as Sent', 'success');
+  showToast('WhatsApp opened with active marketing message', 'success');
 }
 
 function deleteReminder(id, e) {
@@ -1381,11 +1390,41 @@ function getMarketingTemplates() {
   return tpls;
 }
 
+function getActiveMarketingTemplateId() {
+  let activeId = DB.getConfig('activeMarketingTemplateId');
+  const tpls = getMarketingTemplates();
+  if (!activeId || !tpls.some(t => t.id === activeId)) {
+    activeId = tpls[0] ? tpls[0].id : '';
+    DB.setConfig('activeMarketingTemplateId', activeId);
+  }
+  return activeId;
+}
+
+function setActiveMarketingTemplate(id) {
+  DB.setConfig('activeMarketingTemplateId', id);
+  renderMessages();
+  if (currentPage === 'marketing' || currentPage === 'reminders') {
+    renderReminders();
+  }
+  const tpls = getMarketingTemplates();
+  const tpl = tpls.find(t => t.id === id);
+  const title = tpl ? tpl.title : 'Selected template';
+  showToast(`Selected "${title}" for Marketing WhatsApp messages`, 'success');
+}
+
+function getActiveMarketingTemplate() {
+  const tpls = getMarketingTemplates();
+  const activeId = getActiveMarketingTemplateId();
+  const active = tpls.find(t => t.id === activeId);
+  return active || tpls[0] || { id: 'default', title: 'Default Offer', message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure' };
+}
+
 function renderMessages() {
   const container = document.getElementById('marketingTemplatesList');
   if (!container) return;
 
   const tpls = getMarketingTemplates();
+  const activeId = getActiveMarketingTemplateId();
 
   if (tpls.length === 0) {
     container.innerHTML = `
@@ -1398,28 +1437,38 @@ function renderMessages() {
     return;
   }
 
-  container.innerHTML = tpls.map((t, idx) => `
-    <div class="card" style="margin:0;">
-      <div class="card-body" style="padding:18px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h4 style="margin:0; font-size:15px; color:var(--text-primary); font-weight:700;">Template #${idx + 1}</h4>
-          <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template">&#128465;</button>
-        </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label style="font-weight:600; font-size:12px;">Template Title</label>
-          <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:600;">
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label style="font-weight:600; font-size:12px;">Message Content</label>
-          <textarea id="tplMsg_${t.id}" class="form-control" rows="3" style="font-size:13px; resize:vertical;">${t.message}</textarea>
-          <span style="font-size:11px; color:var(--text-muted); margin-top:2px; display:block;">Use {customerName} for automatic customer name replacement.</span>
-        </div>
-        <div style="display:flex; justify-content:flex-end;">
-          <button class="btn btn-primary btn-sm" onclick="saveMessageTemplateItem('${t.id}')">&#128190; Save Template</button>
+  container.innerHTML = tpls.map(t => {
+    const isActive = t.id === activeId;
+    return `
+      <div class="card" style="margin:0; border:${isActive ? '2px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)'}; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(14, 165, 233, 0.15)' : 'none'};">
+        <div class="card-body" style="padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
+            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
+            <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template" style="padding:5px 10px; border-radius:6px;">&#128465;</button>
+          </div>
+          
+          <div style="margin-bottom:14px;">
+            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message...">${t.message}</textarea>
+          </div>
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            ${isActive ? `
+              <span class="badge badge-success" style="padding:6px 12px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:#22c55e; color:#fff;">
+                &#10003; Selected for Marketing
+              </span>
+            ` : `
+              <button class="btn btn-sm btn-outline" onclick="setActiveMarketingTemplate('${t.id}')" style="font-weight:600; font-size:12px;">
+                Select for Marketing
+              </button>
+            `}
+            <button class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="font-weight:600; font-size:12px;">
+              &#128190; Save Template
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function openAddMessageTemplateModal() {
@@ -1439,13 +1488,18 @@ function saveNewMessageTemplate(e) {
   }
 
   let tpls = getMarketingTemplates();
+  const newId = DB.generateId();
   tpls.push({
-    id: DB.generateId(),
+    id: newId,
     title: title,
     message: message
   });
 
   DB.set('marketingTemplates', tpls);
+  if (tpls.length === 1) {
+    DB.setConfig('activeMarketingTemplateId', newId);
+  }
+
   closeModal('addMessageTemplateModal');
   renderMessages();
   showToast('New message template created', 'success');
@@ -1472,6 +1526,10 @@ function deleteMessageTemplateItem(id) {
     let tpls = getMarketingTemplates();
     tpls = tpls.filter(t => t.id !== id);
     DB.set('marketingTemplates', tpls);
+    const activeId = DB.getConfig('activeMarketingTemplateId');
+    if (activeId === id && tpls.length > 0) {
+      DB.setConfig('activeMarketingTemplateId', tpls[0].id);
+    }
     renderMessages();
     showToast('Template deleted', 'success');
   });
