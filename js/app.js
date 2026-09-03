@@ -1,4 +1,4 @@
-// v10.0.0 - Care N Cure App Logic
+// v12.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -20,17 +20,13 @@ function initLogin() {
 
   const sel = document.getElementById('loginUser');
   if (sel) {
-    sel.innerHTML = '<option value="">-- Select User --</option>';
-    users.forEach(u => {
-      sel.innerHTML += `<option value="${u.id}">${u.name} (${u.designation})</option>`;
-    });
+    sel.innerHTML = '<option value="">-- Select User --</option>' +
+      users.map(u => `<option value="${u.id}">${u.name} (${u.designation})</option>`).join('');
   }
 
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    const newForm = loginForm.cloneNode(true);
-    loginForm.parentNode.replaceChild(newForm, loginForm);
-    newForm.addEventListener('submit', function(e) {
+    loginForm.onsubmit = function(e) {
       e.preventDefault();
       const currentUsers = DB.get('employees') || users;
       const userId = document.getElementById('loginUser').value;
@@ -48,7 +44,7 @@ function initLogin() {
       document.getElementById('sidebarAvatar').textContent = user.name.charAt(0).toUpperCase();
 
       initApp();
-    });
+    };
   }
 }
 
@@ -1195,6 +1191,8 @@ function showConfirm(title, message, callback) {
     closeModal('confirmModal');
     callback();
   };
+}
+
 // ===================== MESSAGES =====================
 function renderMessages() {
   const reminderTemplateInput = document.getElementById('msgTemplateReminder');
