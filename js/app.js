@@ -347,6 +347,19 @@ function toggleCustMedDropdown(e) {
   }
 }
 
+function clearCustMedSelection(e) {
+  if (e) e.stopPropagation();
+  selectedCustMedicines = {};
+  updateCustMedUI();
+}
+
+function saveCustMedSelection(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('custMedDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  updateCustMedUI();
+}
+
 function filterCustMedOptions() {
   const query = (document.getElementById('custMedSearch').value || '').toLowerCase();
   const options = document.querySelectorAll('#custMedOptionsList .multi-select-option');
