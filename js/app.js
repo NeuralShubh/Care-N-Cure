@@ -524,23 +524,21 @@ function renderCustomers() {
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
     return;
   }
 
-  const waIconSvg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.83L2.5 21.5l3.82-1.35C7.9 21.32 9.89 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.2.57-1.02 1.1-1.63 1.23-.42.09-.97.16-2.82-.6-2.36-.97-3.88-3.37-4-3.53-.12-.16-.97-1.29-.97-2.46 0-1.17.61-1.74.83-1.98.22-.24.48-.3.64-.3s.33 0 .47.01c.15.01.35-.06.55.42.2.48.69 1.68.75 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.25.31-.36.42-.12.12-.25.25-.11.49.14.24.63 1.04 1.35 1.68.93.83 1.71 1.09 1.95 1.21.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.14 1.15z"/></svg>`;
+  const waIconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.83L2.5 21.5l3.82-1.35C7.9 21.32 9.89 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.2.57-1.02 1.1-1.63 1.23-.42.09-.97.16-2.82-.6-2.36-.97-3.88-3.37-4-3.53-.12-.16-.97-1.29-.97-2.46 0-1.17.61-1.74.83-1.98.22-.24.48-.3.64-.3s.33 0 .47.01c.15.01.35-.06.55.42.2.48.69 1.68.75 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.25.31-.36.42-.12.12-.25.25-.11.49.14.24.63 1.04 1.35 1.68.93.83 1.71 1.09 1.95 1.21.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.14 1.15z"/></svg>`;
 
   table.innerHTML = customers.map(c => {
     return `<tr onclick="viewCustomerHistory('${c.id}')" style="cursor:pointer;" title="Click to view details and actions">
       <td><strong>${c.name}</strong></td>
       <td>${c.address || '-'}</td>
-      <td>
-        <div style="display:inline-flex; align-items:center; gap:8px;">
-          <span>${c.mobile}</span>
-          <button class="whatsapp-link-btn" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat with ${c.name} on WhatsApp">
-            ${waIconSvg}
-          </button>
-        </div>
+      <td>${c.mobile}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="whatsapp-link-btn" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat with ${c.name} on WhatsApp">
+          ${waIconSvg}
+        </button>
       </td>
     </tr>`;
   }).join('');
