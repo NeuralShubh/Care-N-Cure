@@ -1,4 +1,4 @@
-// v8.0.0 - Care N Cure App Logic
+// v10.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -7,31 +7,49 @@ let currentWhatsAppReminder = null;
 
 // ===================== LOGIN =====================
 function initLogin() {
-  const users = DB.get('employees');
+  if (typeof seedData === 'function') seedData();
+  let users = DB.get('employees');
+  if (!Array.isArray(users) || users.length === 0) {
+    users = [
+      { id: 'emp1', name: 'Dr. Rajesh Kumar', mobile: '9876543210', address: '123 Medical Lane, Mumbai', designation: 'Owner', joiningDate: '2023-01-15', salary: 50000, isOwner: true },
+      { id: 'emp2', name: 'Priya Sharma', mobile: '9876543211', address: '456 Health St, Mumbai', designation: 'Pharmacist', joiningDate: '2023-06-01', salary: 25000, isOwner: false },
+      { id: 'emp3', name: 'Amit Patel', mobile: '9876543212', address: '789 Care Ave, Mumbai', designation: 'Cashier', joiningDate: '2024-01-10', salary: 20000, isOwner: false }
+    ];
+    DB.set('employees', users);
+  }
+
   const sel = document.getElementById('loginUser');
-  sel.innerHTML = '<option value="">-- Select User --</option>';
-  users.forEach(u => {
-    sel.innerHTML += `<option value="${u.id}">${u.name} (${u.designation})</option>`;
-  });
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Select User --</option>';
+    users.forEach(u => {
+      sel.innerHTML += `<option value="${u.id}">${u.name} (${u.designation})</option>`;
+    });
+  }
 
-  document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const userId = document.getElementById('loginUser').value;
-    const password = document.getElementById('loginPassword').value;
-    if (!userId) { showToast('Please select a user', 'error'); return; }
-    if (password !== 'admin123') { showToast('Invalid password', 'error'); return; }
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    const newForm = loginForm.cloneNode(true);
+    loginForm.parentNode.replaceChild(newForm, loginForm);
+    newForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const currentUsers = DB.get('employees') || users;
+      const userId = document.getElementById('loginUser').value;
+      const password = document.getElementById('loginPassword').value;
+      if (!userId) { showToast('Please select a user', 'error'); return; }
+      if (password !== 'admin123') { showToast('Invalid password', 'error'); return; }
 
-    const user = users.find(u => u.id === userId);
-    currentUser = user;
-    DB.setConfig('currentUser', user);
+      const user = currentUsers.find(u => u.id === userId) || currentUsers[0];
+      currentUser = user;
+      DB.setConfig('currentUser', user);
 
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('appLayout').style.display = 'flex';
-    document.getElementById('sidebarUserName').textContent = user.name;
-    document.getElementById('sidebarAvatar').textContent = user.name.charAt(0).toUpperCase();
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('appLayout').style.display = 'flex';
+      document.getElementById('sidebarUserName').textContent = user.name;
+      document.getElementById('sidebarAvatar').textContent = user.name.charAt(0).toUpperCase();
 
-    initApp();
-  });
+      initApp();
+    });
+  }
 }
 
 function logout() {
