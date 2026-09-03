@@ -1065,10 +1065,34 @@ textarea.form-control {
 .action-btns .btn-view:hover { background: var(--primary); color: white; }
 
 .action-btns .btn-whatsapp {
-  background: var(--success-bg);
-  color: var(--success);
+  background: #dcfce7;
+  color: #16a34a;
 }
-.action-btns .btn-whatsapp:hover { background: var(--success); color: white; }
+.action-btns .btn-whatsapp:hover {
+  background: #25d366;
+  color: #ffffff;
+}
+
+.whatsapp-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+.whatsapp-link-btn:hover {
+  background: #128c7e;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.4);
+}
 
 /* WhatsApp Message Preview */
 .whatsapp-preview {
