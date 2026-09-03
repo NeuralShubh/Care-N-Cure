@@ -1,4 +1,4 @@
-// v5.0.0 - Care N Cure App Logic
+// v6.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -622,6 +622,9 @@ function openCustomerWhatsApp(customerId, e) {
   }
   const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
 
+  // Capitalize customer name (e.g. "taniya" -> "Taniya")
+  const formattedName = (cust.name || '').trim().replace(/\b\w/g, l => l.toUpperCase());
+
   // Dynamically fetch medicine name(s) purchased by this customer
   const purchases = DB.get('purchases') || [];
   const reminders = DB.get('reminders') || [];
@@ -634,13 +637,9 @@ function openCustomerWhatsApp(customerId, e) {
 
   const allMedNames = [...new Set([...purMedNames, ...remMedNames])];
 
-  let messageText = '';
-  if (allMedNames.length > 0) {
-    const medsString = allMedNames.join(', ');
-    messageText = `Hello ${cust.name}, we hope you are doing well. You recently purchased ${medsString} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
-  } else {
-    messageText = `Hello ${cust.name}, we hope you are doing well. Thank you for choosing Care N Cure. Please take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
-  }
+  const medsString = allMedNames.length > 0 ? allMedNames.join(', ') : 'medicines';
+
+  const messageText = `Hello ${formattedName}, we hope you are doing well. You recently purchased ${medsString} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
 
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
