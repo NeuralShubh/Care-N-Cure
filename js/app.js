@@ -1,4 +1,4 @@
-// v17.0.0 - Care N Cure App Logic
+// v18.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -81,20 +81,23 @@ function logout() {
 
 // ===================== NAVIGATION =====================
 function navigateTo(page) {
+  if (page === 'reminders') page = 'marketing';
   currentPage = page;
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
+  const sec = document.getElementById(`page-${page}`) || document.getElementById('page-marketing') || document.getElementById('page-reminders');
+  if (sec) sec.classList.add('active');
 
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+  const navItem = document.querySelector(`.nav-item[data-page="${page}"]`) || document.querySelector(`.nav-item[data-page="reminders"]`);
   if (navItem) navItem.classList.add('active');
 
   const titles = {
     dashboard: ['Dashboard', "Welcome back! Here's your overview."],
     medicines: ['Medicines', 'Manage medicine inventory.'],
     customers: ['Customers', 'Manage customer records.'],
-    reminders: ['Reminders', 'Manage patient reminders.'],
-    messages: ['Messages', 'Manage and customize message templates.']
+    marketing: ['Marketing', 'Manage marketing & follow-up messages for customers.'],
+    reminders: ['Marketing', 'Manage marketing & follow-up messages for customers.'],
+    messages: ['Messages', 'Create and manage reusable marketing message templates.']
   };
   if (titles[page]) {
     document.getElementById('pageTitle').textContent = titles[page][0];
@@ -110,6 +113,7 @@ function refreshCurrentPage() {
     case 'dashboard': renderDashboard(); break;
     case 'medicines': renderMedicines(); break;
     case 'customers': renderCustomers(); break;
+    case 'marketing':
     case 'reminders': renderReminders(); break;
     case 'messages': renderMessages(); break;
   }
@@ -834,10 +838,11 @@ function viewCustomerHistory(customerId) {
   if (!customer) return;
 
   const purchases = DB.get('purchases').filter(p => p.customerId === customerId);
-  document.getElementById('custHistoryTitle').textContent = `Customer Details`;
+  const rems = (DB.get('reminders') || []).filter(r => r.customerId === customerId);
 
+  document.getElementById('custHistoryTitle').textContent = `Customer Details`;
   const content = document.getElementById('custHistoryContent');
-  
+
   const customerHeaderHtml = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border-color, #e5e7eb); flex-wrap:wrap; gap:12px;">
       <div>
@@ -845,18 +850,18 @@ function viewCustomerHistory(customerId) {
         <p style="margin:0 0 4px 0; color:var(--text-secondary); font-size:14px;"><strong>Mobile:</strong> ${customer.mobile}</p>
         <p style="margin:0; color:var(--text-secondary); font-size:14px;"><strong>Address:</strong> ${customer.address || 'N/A'}</p>
       </div>
-      <div style="display:flex; gap:8px; align-items:center;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('custHistoryModal'); openAddReminderModal('${customer.id}')" title="Add Marketing Follow-up">
+          + Add Marketing
+        </button>
         <button class="btn btn-success btn-sm" onclick="openCustomerWhatsApp('${customer.id}', event)" title="Chat on WhatsApp">
           &#128172; WhatsApp
         </button>
-        <button class="btn btn-primary btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
           &#9998; Edit
         </button>
         <button class="btn btn-danger btn-sm" onclick="closeModal('custHistoryModal'); deleteCustomer('${customer.id}')" title="Delete Customer">
           &#128465; Delete
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal')" title="Close">
-          Close
         </button>
       </div>
     </div>
@@ -864,29 +869,43 @@ function viewCustomerHistory(customerId) {
 
   let purchaseTableHtml = '';
   if (purchases.length === 0) {
-    purchaseTableHtml = '<div class="empty-state" style="padding:20px;"><div class="empty-icon">&#128196;</div><h3>No purchase history</h3><p>This customer has not purchased any medicines yet.</p></div>';
+    purchaseTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon">&#128196;</div><h4>No purchase history</h4></div>';
   } else {
     purchaseTableHtml = `
-      <h4 style="margin:0 0 12px 0; font-size:15px; color:var(--text-primary);">Purchase History</h4>
+      <h4 style="margin:0 0 10px 0; font-size:15px; color:var(--text-primary); font-weight:700;">Purchase History</h4>
+      <div class="table-container" style="margin-bottom:20px;">
+        <table class="data-table">
+          <thead><tr><th>Medicine</th><th>Qty</th><th>Purchase Date</th><th>Finish Date</th></tr></thead>
+          <tbody>
+            ${purchases.map(p => `<tr>
+              <td><strong>${p.medicineName}</strong></td>
+              <td>${p.quantity}</td>
+              <td>${formatDate(p.purchaseDate)}</td>
+              <td>${formatDate(p.finishDate)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  let remTableHtml = '';
+  if (rems.length === 0) {
+    remTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon">&#128100;</div><h4>No marketing follow-ups scheduled</h4></div>';
+  } else {
+    remTableHtml = `
+      <h4 style="margin:16px 0 10px 0; font-size:15px; color:var(--text-primary); font-weight:700;">Marketing & Follow-up History</h4>
       <div class="table-container">
         <table class="data-table">
-          <thead><tr><th>Medicine</th><th>Qty</th><th>Purchase Date</th><th>Days Supply</th><th>Finish Date</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
-            ${purchases.map(p => {
-              const daysLeft = daysUntil(p.finishDate);
-              let status = '';
-              if (daysLeft < 0) status = '<span class="badge badge-danger">Completed</span>';
-              else if (daysLeft <= 3) status = '<span class="badge badge-warning">Finishing Soon</span>';
-              else status = '<span class="badge badge-success">Active</span>';
-              return `<tr>
-                <td><strong>${p.medicineName}</strong></td>
-                <td>${p.quantity}</td>
-                <td>${formatDate(p.purchaseDate)}</td>
-                <td>${p.daysSupply} days</td>
-                <td>${formatDate(p.finishDate)}</td>
-                <td>${status}</td>
-              </tr>`;
-            }).join('')}
+            ${rems.map(r => `<tr>
+              <td><strong>${formatDate(r.finishDate)}</strong></td>
+              <td><span class="badge badge-${r.status === 'completed' ? 'success' : r.status === 'sent' ? 'info' : 'warning'}">${r.status.toUpperCase()}</span></td>
+              <td>
+                <button class="btn btn-sm btn-success" onclick="closeModal('custHistoryModal'); sendWhatsAppReminderDirect('${r.id}')">&#128172; Send</button>
+              </td>
+            </tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -899,12 +918,13 @@ function viewCustomerHistory(customerId) {
     </div>
   `;
 
-  content.innerHTML = customerHeaderHtml + purchaseTableHtml + modalFooterHtml;
+  content.innerHTML = customerHeaderHtml + purchaseTableHtml + remTableHtml + modalFooterHtml;
   document.getElementById('custHistoryModal').classList.add('active');
 }
 
 
 
+// ===================== MARKETING / REMINDERS =====================
 function syncCustomerReminders() {
   const customers = DB.get('customers') || [];
   const purchases = DB.get('purchases') || [];
@@ -924,7 +944,7 @@ function syncCustomerReminders() {
             d.setDate(d.getDate() + 7);
             return d.toISOString().split('T')[0];
           })();
-          const defaultMsg = `Hello ${c.name}, your ${p.medicineName} tablets are about to finish on ${formatDate(defaultDateStr)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+          const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
 
           reminders.push({
             id: DB.generateId(),
@@ -956,7 +976,7 @@ function syncCustomerReminders() {
           d.setDate(d.getDate() + 7);
           return d.toISOString().split('T')[0];
         })();
-        const defaultMsg = `Hello ${c.name}, we hope you are doing well. Please let us know if you need any medicines or health assistance. Thank you. – Care N Cure`;
+        const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
 
         reminders.push({
           id: DB.generateId(),
@@ -964,7 +984,7 @@ function syncCustomerReminders() {
           customerName: c.name,
           customerMobile: c.mobile,
           medicineId: '',
-          medicineName: 'General Medicine Supply',
+          medicineName: 'Marketing Follow-up',
           finishDate: defaultDateStr,
           customMessage: defaultMsg,
           isCustomMessage: false,
@@ -991,49 +1011,38 @@ function autoGenerateReminders() {
   syncCustomerReminders();
 }
 
-function onAddRemCustomerChange() {
-  const custId = document.getElementById('addRemCustomer').value;
-  const medSel = document.getElementById('addRemMedicine');
-  if (!medSel) return;
-
-  const purchases = DB.get('purchases') || [];
-  const medicines = DB.get('medicines') || [];
-
-  if (!custId) {
-    medSel.innerHTML = '<option value="">Select Medicine</option>' +
-      medicines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-    return;
-  }
-
-  const custPurchases = purchases.filter(p => p.customerId === custId);
-  const purchasedMedIds = new Set(custPurchases.map(p => p.medicineId));
-
-  let matchedMeds = medicines.filter(m => purchasedMedIds.has(m.id));
-  if (matchedMeds.length === 0) {
-    matchedMeds = medicines;
-  }
-
-  medSel.innerHTML = '<option value="">Select Medicine</option>' +
-    matchedMeds.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+function addMarketingDateInput() {
+  const container = document.getElementById('marketingDateInputsContainer');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.style.display = 'flex';
+  div.style.gap = '8px';
+  div.style.alignItems = 'center';
+  const defaultDateStr = new Date().toISOString().split('T')[0];
+  div.innerHTML = `
+    <input type="date" class="form-control marketing-date-picker" value="${defaultDateStr}" required>
+    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" title="Remove Date">&times;</button>
+  `;
+  container.appendChild(div);
 }
 
-function openAddReminderModal() {
+function openAddReminderModal(presetCustId = null) {
   const form = document.getElementById('addReminderForm');
   if (form) form.reset();
+
+  const container = document.getElementById('marketingDateInputsContainer');
+  if (container) {
+    const defaultDateStr = new Date().toISOString().split('T')[0];
+    container.innerHTML = `<input type="date" class="form-control marketing-date-picker" value="${defaultDateStr}" required>`;
+  }
 
   const custSel = document.getElementById('addRemCustomer');
   const custs = DB.get('customers') || [];
   if (custSel) {
     custSel.innerHTML = '<option value="">Select Customer</option>' +
       custs.map(c => `<option value="${c.id}">${c.name} (${c.mobile})</option>`).join('');
+    if (presetCustId) custSel.value = presetCustId;
   }
-
-  onAddRemCustomerChange();
-
-  const defaultDate = new Date();
-  defaultDate.setDate(defaultDate.getDate() + 7);
-  const dateInput = document.getElementById('addRemFinishDate');
-  if (dateInput) dateInput.value = defaultDate.toISOString().split('T')[0];
 
   document.getElementById('addReminderModal').classList.add('active');
 }
@@ -1041,42 +1050,112 @@ function openAddReminderModal() {
 function saveNewReminder(e) {
   e.preventDefault();
   const custId = document.getElementById('addRemCustomer').value;
-  const medId = document.getElementById('addRemMedicine').value;
-  const finishDate = document.getElementById('addRemFinishDate').value;
+  const datePickers = document.querySelectorAll('#marketingDateInputsContainer .marketing-date-picker');
 
   const customers = DB.get('customers') || [];
-  const medicines = DB.get('medicines') || [];
-
   const customer = customers.find(c => c.id === custId);
-  const med = medicines.find(m => m.id === medId);
 
-  if (!customer || !med) {
-    showToast('Please select valid customer and medicine', 'error');
+  if (!customer) {
+    showToast('Please select a valid customer', 'error');
     return;
   }
 
-  const defaultMsg = `Hello ${customer.name}, your ${med.name} tablets are about to finish on ${formatDate(finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+  const dates = [];
+  datePickers.forEach(input => {
+    if (input.value) dates.push(input.value);
+  });
+
+  if (dates.length === 0) {
+    showToast('Please select at least one date', 'error');
+    return;
+  }
 
   let reminders = DB.get('reminders') || [];
-  reminders.push({
-    id: DB.generateId(),
-    customerId: customer.id,
-    customerName: customer.name,
-    customerMobile: customer.mobile,
-    medicineId: med.id,
-    medicineName: med.name,
-    finishDate: finishDate,
-    customMessage: defaultMsg,
-    isCustomMessage: false,
-    status: 'pending',
-    createdAt: new Date().toISOString().split('T')[0]
+  const tpls = getMarketingTemplates();
+  const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️';
+
+  dates.forEach(finishDate => {
+    const defaultMsg = defaultTpl.replace(/{customerName}/g, customer.name);
+    reminders.push({
+      id: DB.generateId(),
+      customerId: customer.id,
+      customerName: customer.name,
+      customerMobile: customer.mobile,
+      medicineId: '',
+      medicineName: 'Marketing Follow-up',
+      finishDate: finishDate,
+      customMessage: defaultMsg,
+      isCustomMessage: false,
+      status: 'pending',
+      createdAt: new Date().toISOString().split('T')[0]
+    });
   });
 
   DB.set('reminders', reminders);
   closeModal('addReminderModal');
   updateBadges();
   renderReminders();
-  showToast('Reminder added successfully', 'success');
+  showToast(`${dates.length} marketing follow-up(s) added successfully`, 'success');
+}
+
+function toggleReminderCompleted(remId, e) {
+  if (e) e.stopPropagation();
+  let reminders = DB.get('reminders') || [];
+  const rem = reminders.find(r => r.id === remId);
+  if (!rem) return;
+
+  if (rem.status === 'completed') {
+    rem.status = 'pending';
+    showToast('Marked as Pending', 'info');
+  } else {
+    rem.status = 'completed';
+    rem.completedAt = new Date().toISOString();
+    showToast('Marked as Completed', 'success');
+  }
+
+  DB.set('reminders', reminders);
+  updateBadges();
+  renderReminders();
+}
+
+function callCustomer(mobile, e) {
+  if (e) e.stopPropagation();
+  const cleanMobile = (mobile || '').replace(/\D/g, '');
+  if (!cleanMobile) {
+    showToast('Invalid mobile number', 'error');
+    return;
+  }
+  window.location.href = `tel:${cleanMobile}`;
+}
+
+function toggleMarketingRow(remId) {
+  const panel = document.getElementById(`marketingPanel_${remId}`);
+  const icon = document.getElementById(`toggleIcon_${remId}`);
+  if (panel) {
+    panel.classList.toggle('open');
+    if (icon) {
+      icon.innerHTML = panel.classList.contains('open') ? '&#9650;' : '&#9660;';
+    }
+  }
+}
+
+function applyTemplateToReminder(remId, tplIndex) {
+  const tpls = getMarketingTemplates();
+  const selectedTpl = tpls[tplIndex];
+  let reminders = DB.get('reminders') || [];
+  const rem = reminders.find(r => r.id === remId);
+
+  if (!selectedTpl || !rem) return;
+
+  const formattedMsg = selectedTpl.message.replace(/{customerName}/g, rem.customerName);
+  rem.customMessage = formattedMsg;
+  rem.isCustomMessage = true;
+  DB.set('reminders', reminders);
+
+  const textarea = document.getElementById(`remMsgInput_${remId}`);
+  if (textarea) textarea.value = formattedMsg;
+
+  showToast(`Applied template: "${selectedTpl.title}"`, 'info');
 }
 
 function onReminderDateChange(remId, newDateStr) {
@@ -1087,12 +1166,14 @@ function onReminderDateChange(remId, newDateStr) {
   rem.finishDate = newDateStr;
 
   if (!rem.isCustomMessage) {
-    rem.customMessage = `Hello ${rem.customerName}, your ${rem.medicineName} tablets are about to finish on ${formatDate(newDateStr)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+    const tpls = getMarketingTemplates();
+    const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️';
+    rem.customMessage = defaultTpl.replace(/{customerName}/g, rem.customerName);
   }
 
   DB.set('reminders', reminders);
   renderReminders();
-  showToast('Reminder date updated', 'info');
+  showToast('Date updated', 'info');
 }
 
 function onReminderMessageInput(remId, newText) {
@@ -1113,13 +1194,14 @@ function saveReminderMessage(remId) {
   }
 }
 
-function sendWhatsAppReminderDirect(remId) {
+function sendWhatsAppReminderDirect(remId, e) {
+  if (e) e.stopPropagation();
   let reminders = DB.get('reminders') || [];
   const rem = reminders.find(r => r.id === remId);
   if (!rem) return;
 
   const msgInput = document.getElementById(`remMsgInput_${remId}`);
-  const messageText = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : (rem.customMessage || `Hello ${rem.customerName}, your ${rem.medicineName} tablets are about to finish on ${formatDate(rem.finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`);
+  const messageText = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : (rem.customMessage || `Hello ${rem.customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`);
 
   const cleanMobile = (rem.customerMobile || '').replace(/\D/g, '');
   if (!cleanMobile) {
@@ -1137,16 +1219,16 @@ function sendWhatsAppReminderDirect(remId) {
 
   updateBadges();
   renderReminders();
-  showToast('Reminder marked as Sent & WhatsApp opened', 'success');
+  showToast('WhatsApp opened & marked as Sent', 'success');
 }
 
 function deleteReminder(id, e) {
   if (e) e.stopPropagation();
-  showConfirm('Delete Reminder', 'Are you sure you want to delete this reminder?', function() {
+  showConfirm('Delete Follow-up', 'Are you sure you want to delete this marketing follow-up?', function() {
     let reminders = DB.get('reminders') || [];
     reminders = reminders.filter(r => r.id !== id);
     DB.set('reminders', reminders);
-    showToast('Reminder deleted successfully', 'success');
+    showToast('Follow-up deleted successfully', 'success');
     updateBadges();
     renderReminders();
   });
@@ -1154,7 +1236,7 @@ function deleteReminder(id, e) {
 
 function switchReminderTab(tab) {
   currentReminderTab = tab;
-  document.querySelectorAll('#page-reminders .tab').forEach(t => {
+  document.querySelectorAll('#page-marketing .tab, #page-reminders .tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
   renderReminders();
@@ -1176,13 +1258,18 @@ function renderReminders() {
     );
   }
 
-  reminders.sort((a, b) => new Date(a.finishDate) - new Date(b.finishDate));
+  // Recent upside (newest first)
+  reminders.sort((a, b) => new Date(b.createdAt || b.finishDate) - new Date(a.createdAt || a.finishDate));
 
   const container = document.getElementById('reminderList');
+  if (!container) return;
+
   if (reminders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128172;</div><h3>No ${currentReminderTab} reminders found</h3><p>Click "+ Add Reminder" button above to create a new reminder.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128100;</div><h3>No ${currentReminderTab} marketing follow-ups</h3><p>Click "+ Add Marketing Follow-up" button above to add dates for customer follow-up.</p></div>`;
     return;
   }
+
+  const templates = getMarketingTemplates();
 
   container.innerHTML = reminders.map(r => {
     const daysLeft = daysUntil(r.finishDate);
@@ -1196,72 +1283,206 @@ function renderReminders() {
       dateBadgeText = `Due Today`;
     }
 
-    const currentMsg = r.customMessage || `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish on ${formatDate(r.finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+    const currentMsg = r.customMessage || `Hello ${r.customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`;
+    const isChecked = r.status === 'completed';
 
-    let actionBtns = '';
-    if (r.status === 'pending') {
-      actionBtns = `
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-outline btn-sm" onclick="saveReminderMessage('${r.id}')">&#128190; Save Message</button>
-          <button class="btn btn-success btn-sm" onclick="sendWhatsAppReminderDirect('${r.id}')">&#128172; Send</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
-        </div>
-      `;
-    } else {
-      actionBtns = `
-        <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
-      `;
-    }
+    const tplOptions = templates.map((t, idx) => `<option value="${idx}">${t.title}</option>`).join('');
 
     return `
-      <div class="reminder-item" style="padding:18px; border-bottom:1px solid var(--border-light); background:var(--card-bg); border-radius:var(--radius-lg); margin-bottom:16px; border:1px solid var(--border-color);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
-          <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:280px;">
-            <div class="reminder-icon ${r.status}" style="margin-top:2px;">
-              ${r.status === 'pending' ? '&#9857;' : r.status === 'sent' ? '&#10003;' : '&#10007;'}
-            </div>
+      <div class="marketing-item-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          
+          <!-- Left: Completed Toggle Checkbox & Customer Name / Mobile -->
+          <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+            <button class="completed-check-btn ${isChecked ? 'checked' : ''}" onclick="toggleReminderCompleted('${r.id}', event)" title="${isChecked ? 'Mark as Pending' : 'Mark as Completed'}">
+              ${isChecked ? '&#10003;' : ''}
+            </button>
             <div>
-              <h4 style="margin:0 0 4px 0; font-size:16px; color:var(--text-primary); font-weight:700;">
-                ${r.customerName} - <span style="color:var(--primary);">${r.medicineName}</span>
+              <h4 style="margin:0 0 2px 0; font-size:16px; color:var(--text-primary); font-weight:700;">
+                ${r.customerName}
+                ${r.medicineName && r.medicineName !== 'Marketing Follow-up' ? `<span style="font-size:13px; font-weight:500; color:var(--primary); margin-left:6px;">(${r.medicineName})</span>` : ''}
               </h4>
               <p style="margin:0; font-size:13px; color:var(--text-secondary);">
-                <strong>Mobile:</strong> ${r.customerMobile}
+                <strong>Mobile:</strong> ${r.customerMobile} | <strong>Date:</strong> ${formatDate(r.finishDate)}
               </p>
             </div>
           </div>
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary);">Reminder Date:</label>
+
+          <!-- Right: WhatsApp Icon, Call Icon, Status Badge & Action Toggle -->
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <button class="icon-btn-whatsapp" onclick="sendWhatsAppReminderDirect('${r.id}', event)" title="Send WhatsApp Message">
+              &#128172;
+            </button>
+            <button class="icon-btn-call" onclick="callCustomer('${r.customerMobile}', event)" title="Call Customer">
+              &#128222;
+            </button>
+            <span class="badge ${dateBadgeClass}" style="font-size:12px; padding:6px 10px;">${dateBadgeText}</span>
+            <button class="btn btn-outline btn-sm" onclick="toggleMarketingRow('${r.id}')" style="padding:5px 10px; font-size:12px;">
+              <span id="toggleIcon_${r.id}">&#9660;</span> Actions
+            </button>
+          </div>
+        </div>
+
+        <!-- Expandable Actions & Message Section -->
+        <div id="marketingPanel_${r.id}" class="marketing-expanded-panel">
+          <div style="background:var(--body-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+              <label style="font-size:12px; font-weight:700; color:var(--text-primary);">Select Message Template:</label>
+              <select class="form-control" style="font-size:12px; width:auto; padding:4px 8px;" onchange="applyTemplateToReminder('${r.id}', this.value)">
+                <option value="">-- Apply Template --</option>
+                ${tplOptions}
+              </select>
+            </div>
+            <textarea id="remMsgInput_${r.id}" class="form-control" rows="3" style="font-size:13px; resize:vertical;" oninput="onReminderMessageInput('${r.id}', this.value)" placeholder="Enter marketing message...">${currentMsg}</textarea>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Set Date:</label>
               <input type="date" value="${r.finishDate}" class="form-control" style="font-size:12px; padding:4px 8px; width:auto;" onchange="onReminderDateChange('${r.id}', this.value)">
             </div>
-            <span class="badge ${dateBadgeClass}" style="font-size:12px; padding:6px 10px;">${dateBadgeText}</span>
-          </div>
-        </div>
 
-        <div style="background:var(--body-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); margin-top:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <label style="font-size:12px; font-weight:700; color:var(--text-primary);">Message Section (Editable):</label>
-            <span style="font-size:11px; color:var(--text-muted);">${r.isCustomMessage ? '&#9998; Custom Edited' : '&#9881; Auto-generated'}</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" onclick="saveReminderMessage('${r.id}')">&#128190; Save Message</button>
+              <button class="btn btn-success btn-sm" onclick="sendWhatsAppReminderDirect('${r.id}', event)">&#128172; Send WhatsApp</button>
+              <button class="btn btn-outline btn-sm" onclick="viewCustomerDetails('${r.customerId}')">&#128100; Details</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Follow-up">&#128465; Delete</button>
+            </div>
           </div>
-          <textarea id="remMsgInput_${r.id}" class="form-control" rows="2" style="font-size:13px; resize:vertical;" oninput="onReminderMessageInput('${r.id}', this.value)" placeholder="Enter reminder message...">${currentMsg}</textarea>
-        </div>
-
-        <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:12px;">
-          ${actionBtns}
-          <span class="badge badge-${r.status === 'pending' ? 'warning' : r.status === 'sent' ? 'success' : 'danger'}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
         </div>
       </div>
     `;
   }).join('');
 }
 
+// ===================== MESSAGES SECTION =====================
+function getMarketingTemplates() {
+  let tpls = DB.get('marketingTemplates');
+  if (!Array.isArray(tpls) || tpls.length === 0) {
+    tpls = [
+      {
+        id: 'tpl1',
+        title: 'General Greeting',
+        message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure'
+      },
+      {
+        id: 'tpl2',
+        title: 'Health & Wellness Checkup',
+        message: 'Hello {customerName}, we hope you are doing well. Care N Cure is always here for your healthcare & medicine needs. Stay healthy! ❤️'
+      },
+      {
+        id: 'tpl3',
+        title: 'Special Discount Offer',
+        message: 'Hello {customerName}, special health discounts are live at Care N Cure today! Visit us or call for fast delivery. 🏥 – Care N Cure'
+      }
+    ];
+    DB.set('marketingTemplates', tpls);
+  }
+  return tpls;
+}
+
+function renderMessages() {
+  const container = document.getElementById('marketingTemplatesList');
+  if (!container) return;
+
+  const tpls = getMarketingTemplates();
+
+  if (tpls.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-icon">&#128172;</div>
+        <h3>No message templates found</h3>
+        <p>Click "+ Add Message Template" to create a new reusable template.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = tpls.map((t, idx) => `
+    <div class="card" style="margin:0;">
+      <div class="card-body" style="padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="margin:0; font-size:15px; color:var(--text-primary); font-weight:700;">Template #${idx + 1}</h4>
+          <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template">&#128465;</button>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-weight:600; font-size:12px;">Template Title</label>
+          <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:600;">
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="font-weight:600; font-size:12px;">Message Content</label>
+          <textarea id="tplMsg_${t.id}" class="form-control" rows="3" style="font-size:13px; resize:vertical;">${t.message}</textarea>
+          <span style="font-size:11px; color:var(--text-muted); margin-top:2px; display:block;">Use {customerName} for automatic customer name replacement.</span>
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary btn-sm" onclick="saveMessageTemplateItem('${t.id}')">&#128190; Save Template</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddMessageTemplateModal() {
+  const form = document.getElementById('addMessageTemplateForm');
+  if (form) form.reset();
+  document.getElementById('addMessageTemplateModal').classList.add('active');
+}
+
+function saveNewMessageTemplate(e) {
+  e.preventDefault();
+  const title = document.getElementById('newTplTitle').value.trim();
+  const message = document.getElementById('newTplMessage').value.trim();
+
+  if (!title || !message) {
+    showToast('Please enter both title and message content', 'error');
+    return;
+  }
+
+  let tpls = getMarketingTemplates();
+  tpls.push({
+    id: DB.generateId(),
+    title: title,
+    message: message
+  });
+
+  DB.set('marketingTemplates', tpls);
+  closeModal('addMessageTemplateModal');
+  renderMessages();
+  showToast('New message template created', 'success');
+}
+
+function saveMessageTemplateItem(id) {
+  const titleInput = document.getElementById(`tplTitle_${id}`);
+  const msgInput = document.getElementById(`tplMsg_${id}`);
+
+  if (!titleInput || !msgInput) return;
+
+  let tpls = getMarketingTemplates();
+  const tpl = tpls.find(t => t.id === id);
+  if (tpl) {
+    tpl.title = titleInput.value.trim();
+    tpl.message = msgInput.value.trim();
+    DB.set('marketingTemplates', tpls);
+    showToast('Template saved successfully', 'success');
+  }
+}
+
+function deleteMessageTemplateItem(id) {
+  showConfirm('Delete Template', 'Are you sure you want to delete this message template?', function() {
+    let tpls = getMarketingTemplates();
+    tpls = tpls.filter(t => t.id !== id);
+    DB.set('marketingTemplates', tpls);
+    renderMessages();
+    showToast('Template deleted', 'success');
+  });
+}
+
 // ===================== WHATSAPP REMINDER =====================
 function openWhatsAppReminder(customerId, medicineId, finishDate) {
   const customer = DB.get('customers').find(c => c.id === customerId);
-  const med = DB.get('medicines').find(m => m.id === medicineId);
-  if (!customer || !med) return;
+  if (!customer) return;
 
-  const defaultMessage = `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
+  const defaultMessage = `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
 
   currentWhatsAppReminder = { customerId, medicineId, finishDate };
 
@@ -1278,22 +1499,18 @@ function sendWhatsAppReminder() {
   if (!currentWhatsAppReminder) return;
 
   const customer = DB.get('customers').find(c => c.id === currentWhatsAppReminder.customerId);
-  const med = DB.get('medicines').find(m => m.id === currentWhatsAppReminder.medicineId);
-  if (!customer || !med) return;
+  if (!customer) return;
 
   const msgInput = document.getElementById('whatsappMessageText');
-  const message = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
+  const message = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`;
   
   const cleanMobile = customer.mobile.replace(/\D/g, '');
   const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
   const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-  // Update reminder status
   let reminders = DB.get('reminders');
   const reminder = reminders.find(r =>
-    r.customerId === currentWhatsAppReminder.customerId &&
-    r.medicineId === currentWhatsAppReminder.medicineId &&
-    r.finishDate === currentWhatsAppReminder.finishDate
+    r.customerId === currentWhatsAppReminder.customerId
   );
 
   try {
@@ -1302,12 +1519,12 @@ function sendWhatsAppReminder() {
       reminder.status = 'sent';
       reminder.sentAt = new Date().toISOString();
     }
-    showToast('WhatsApp reminder sent!', 'success');
+    showToast('WhatsApp message sent!', 'success');
   } catch (e) {
     if (reminder) {
       reminder.status = 'failed';
     }
-    showToast('Failed to send WhatsApp reminder', 'error');
+    showToast('Failed to send WhatsApp message', 'error');
   }
 
   DB.set('reminders', reminders);
@@ -1330,23 +1547,19 @@ function updateBadges() {
   const headerRem = document.getElementById('headerRemBadge');
 
   if (lowStock > 0) {
-    medBadge.style.display = 'inline';
-    medBadge.textContent = lowStock;
-    headerStock.style.display = 'flex';
-    headerStock.textContent = lowStock;
+    if (medBadge) { medBadge.style.display = 'inline'; medBadge.textContent = lowStock; }
+    if (headerStock) { headerStock.style.display = 'flex'; headerStock.textContent = lowStock; }
   } else {
-    medBadge.style.display = 'none';
-    headerStock.style.display = 'none';
+    if (medBadge) medBadge.style.display = 'none';
+    if (headerStock) headerStock.style.display = 'none';
   }
 
   if (pendingReminders > 0) {
-    remBadge.style.display = 'inline';
-    remBadge.textContent = pendingReminders;
-    headerRem.style.display = 'flex';
-    headerRem.textContent = pendingReminders;
+    if (remBadge) { remBadge.style.display = 'inline'; remBadge.textContent = pendingReminders; }
+    if (headerRem) { headerRem.style.display = 'flex'; headerRem.textContent = pendingReminders; }
   } else {
-    remBadge.style.display = 'none';
-    headerRem.style.display = 'none';
+    if (remBadge) remBadge.style.display = 'none';
+    if (headerRem) headerRem.style.display = 'none';
   }
 }
 
@@ -1367,7 +1580,8 @@ function daysUntil(dateStr) {
 }
 
 function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.remove('active');
 }
 
 function closeModalOnOverlay(e, id) {
@@ -1376,6 +1590,7 @@ function closeModalOnOverlay(e, id) {
 
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const icons = { success: '&#10003;', error: '&#10007;', warning: '&#9888;' };
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
@@ -1396,33 +1611,6 @@ function showConfirm(title, message, callback) {
     closeModal('confirmModal');
     callback();
   };
-}
-
-// ===================== MESSAGES =====================
-function renderMessages() {
-  const reminderTemplateInput = document.getElementById('msgTemplateReminder');
-  const caringTemplateInput = document.getElementById('msgTemplateCaring');
-
-  const templates = DB.get('messageTemplates') || {
-    reminder: 'Hello {customerName}, your {medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.',
-    caring: 'Hello {customerName}, we hope you are doing well. You recently purchased {medicineName} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure'
-  };
-
-  if (reminderTemplateInput) reminderTemplateInput.value = templates.reminder || '';
-  if (caringTemplateInput) caringTemplateInput.value = templates.caring || '';
-}
-
-function saveMessageSectionTemplates() {
-  const reminderTemplateInput = document.getElementById('msgTemplateReminder');
-  const caringTemplateInput = document.getElementById('msgTemplateCaring');
-
-  const templates = {
-    reminder: reminderTemplateInput ? reminderTemplateInput.value.trim() : '',
-    caring: caringTemplateInput ? caringTemplateInput.value.trim() : ''
-  };
-
-  DB.set('messageTemplates', templates);
-  showToast('Message templates saved successfully', 'success');
 }
 
 // ===================== INIT =====================

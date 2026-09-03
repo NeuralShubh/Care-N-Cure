@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=17.0.0">
+  <link rel="stylesheet" href="css/style.css?v=18.0.0">
 </head>
 <body>
 
@@ -69,9 +69,9 @@
           <span class="nav-icon">&#9823;</span> Customers
         </a>
 
-        <div class="nav-section">Reminders</div>
-        <a class="nav-item" data-page="reminders" onclick="navigateTo('reminders')">
-          <span class="nav-icon">&#9857;</span> Reminders
+        <div class="nav-section">Marketing</div>
+        <a class="nav-item" data-page="marketing" onclick="navigateTo('marketing')">
+          <span class="nav-icon">&#128100;</span> Marketing
           <span id="navRemAlerts" class="nav-badge" style="display:none;"></span>
         </a>
         <a class="nav-item" data-page="messages" onclick="navigateTo('messages')">
@@ -104,8 +104,8 @@
           <button class="header-btn" onclick="navigateTo('medicines')" title="Low Stock Alerts">
             &#9888;<span id="headerStockBadge" class="badge" style="display:none;"></span>
           </button>
-          <button class="header-btn" onclick="navigateTo('reminders')" title="Pending Reminders">
-            &#9857;<span id="headerRemBadge" class="badge" style="display:none;"></span>
+          <button class="header-btn" onclick="navigateTo('marketing')" title="Marketing Alerts">
+            &#128100;<span id="headerRemBadge" class="badge" style="display:none;"></span>
           </button>
         </div>
       </header>
@@ -139,8 +139,8 @@
           <div class="dashboard-grid">
             <div class="card">
               <div class="card-header">
-                <h3>Upcoming Reminders</h3>
-                <button class="btn btn-sm btn-outline" onclick="navigateTo('reminders')">View All</button>
+                <h3>Marketing Follow-ups</h3>
+                <button class="btn btn-sm btn-outline" onclick="navigateTo('marketing')">View All</button>
               </div>
               <div class="card-body">
                 <div id="dashReminders" class="reminder-list"></div>
@@ -229,19 +229,19 @@
 
 
 
-        <!-- ========== REMINDERS ========== -->
-        <section id="page-reminders" class="page-section">
+        <!-- ========== MARKETING ========== -->
+        <section id="page-marketing" class="page-section">
           <div class="toolbar">
             <div class="search-box">
               <span class="search-icon">&#128269;</span>
-              <input type="text" id="remSearch" placeholder="Search reminders by customer, medicine or mobile..." oninput="renderReminders()">
+              <input type="text" id="remSearch" placeholder="Search marketing follow-ups by customer or mobile..." oninput="renderReminders()">
             </div>
-            <button class="btn btn-primary" onclick="openAddReminderModal()">+ Add Reminder</button>
+            <button class="btn btn-primary" onclick="openAddReminderModal()">+ Add Marketing Follow-up</button>
           </div>
           <div class="tabs">
             <button class="tab active" data-tab="pending" onclick="switchReminderTab('pending')">Pending</button>
             <button class="tab" data-tab="sent" onclick="switchReminderTab('sent')">Sent</button>
-            <button class="tab" data-tab="failed" onclick="switchReminderTab('failed')">Failed</button>
+            <button class="tab" data-tab="completed" onclick="switchReminderTab('completed')">Completed</button>
           </div>
           <div class="card">
             <div class="card-body">
@@ -252,32 +252,16 @@
 
         <!-- ========== MESSAGES ========== -->
         <section id="page-messages" class="page-section">
-          <div class="card" style="max-width: 800px; margin: 0 auto;">
-            <div class="card-body">
-              <h3 style="font-size:16px; margin-bottom:6px; color:var(--text-primary);">WhatsApp Reminder Message Template</h3>
-              <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
-                Customize default reminder messages sent to customers via WhatsApp.
-              </p>
-
-              <div class="form-group" style="margin-bottom:24px;">
-                <label style="font-weight:600; margin-bottom:6px; display:block;">Reminder Message Template</label>
-                <textarea id="msgTemplateReminder" class="form-control" rows="4" placeholder="Enter default reminder message template..."></textarea>
-              </div>
-
-              <h3 style="font-size:16px; margin-bottom:6px; color:var(--text-primary); border-top:1px solid var(--border-light); padding-top:20px;">Customer Caring Message Template</h3>
-              <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
-                Customize default caring messages sent to customers from Customer section.
-              </p>
-
-              <div class="form-group" style="margin-bottom:20px;">
-                <label style="font-weight:600; margin-bottom:6px; display:block;">Caring Message Template</label>
-                <textarea id="msgTemplateCaring" class="form-control" rows="4" placeholder="Enter default customer caring message template..."></textarea>
-              </div>
-
-              <div style="display:flex; justify-content:flex-end;">
-                <button class="btn btn-primary" onclick="saveMessageSectionTemplates()">Save Message Templates</button>
-              </div>
+          <div class="toolbar" style="margin-bottom:20px;">
+            <div>
+              <h2 style="font-size:18px; color:var(--text-primary); margin:0;">Marketing Message Templates</h2>
+              <p style="font-size:13px; color:var(--text-secondary); margin:4px 0 0 0;">Create, edit and manage reusable marketing message templates.</p>
             </div>
+            <button class="btn btn-primary" onclick="openAddMessageTemplateModal()">+ Add Message Template</button>
+          </div>
+
+          <div id="marketingTemplatesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:18px;">
+            <!-- JS renders templates dynamically -->
           </div>
         </section>
       </div>
@@ -466,41 +450,69 @@
     </div>
   </div>
 
-  <!-- Add Reminder Modal -->
+  <!-- Add Marketing / Reminder Modal -->
   <div id="addReminderModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addReminderModal')">
-    <div class="modal" style="max-width:500px;">
+    <div class="modal" style="max-width:520px;">
       <div class="modal-header">
-        <h3>Add Reminder</h3>
+        <h3>Add Marketing Follow-up</h3>
         <button class="modal-close" onclick="closeModal('addReminderModal')">&times;</button>
       </div>
       <div class="modal-body">
         <form id="addReminderForm" onsubmit="saveNewReminder(event)">
           <div class="form-group">
             <label>Customer <span class="required">*</span></label>
-            <select id="addRemCustomer" class="form-control" required onchange="onAddRemCustomerChange()">
+            <select id="addRemCustomer" class="form-control" required>
               <option value="">Select Customer</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>Medicine <span class="required">*</span></label>
-            <select id="addRemMedicine" class="form-control" required>
-              <option value="">Select Medicine</option>
-            </select>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label style="margin:0;">Reminder Date(s) <span class="required">*</span></label>
+              <button type="button" class="btn btn-sm btn-outline" onclick="addMarketingDateInput()">+ Add Another Date</button>
+            </div>
+            <div id="marketingDateInputsContainer" style="display:flex; flex-direction:column; gap:8px;">
+              <input type="date" class="form-control marketing-date-picker" required>
+            </div>
+            <span style="font-size:11px; color:var(--text-muted); margin-top:4px; display:block;">Select one or more dates for this customer's marketing follow-up.</span>
           </div>
-          <div class="form-group">
-            <label>Finish Date / Reminder Date <span class="required">*</span></label>
-            <input type="date" id="addRemFinishDate" class="form-control" required>
-          </div>
-          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+
+          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
             <button type="button" class="btn btn-outline" onclick="closeModal('addReminderModal')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Reminder</button>
+            <button type="submit" class="btn btn-primary">Save Follow-up(s)</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <script src="js/data.js?v=17.0.0"></script>
-  <script src="js/app.js?v=17.0.0"></script>
+  <!-- Add Message Template Modal -->
+  <div id="addMessageTemplateModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addMessageTemplateModal')">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <h3>Add Message Template</h3>
+        <button class="modal-close" onclick="closeModal('addMessageTemplateModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addMessageTemplateForm" onsubmit="saveNewMessageTemplate(event)">
+          <div class="form-group">
+            <label>Template Title <span class="required">*</span></label>
+            <input type="text" id="newTplTitle" class="form-control" placeholder="e.g. Special Offer / Refill Reminder" required>
+          </div>
+          <div class="form-group">
+            <label>Message Content <span class="required">*</span></label>
+            <textarea id="newTplMessage" class="form-control" rows="4" placeholder="Use {customerName} for automatic customer name replacement..." required></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('addMessageTemplateModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Template</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=18.0.0"></script>
+  <script src="js/app.js?v=18.0.0"></script>
 </body>
 </html>

@@ -1447,3 +1447,93 @@ textarea.form-control {
   padding: 10px 14px;
   margin-bottom: 8px;
 }
+
+/* Marketing & Direct Icon Buttons */
+.icon-btn-whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.icon-btn-whatsapp:hover {
+  background: #128c7e;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+.icon-btn-call {
+  background: #0284c7;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.icon-btn-call:hover {
+  background: #0369a1;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.completed-check-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color, #cbd5e1);
+  background: var(--card-bg, #ffffff);
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.completed-check-btn:hover {
+  border-color: #16a34a;
+  color: #16a34a;
+}
+.completed-check-btn.checked {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.marketing-item-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: box-shadow 0.2s ease;
+}
+.marketing-item-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.marketing-expanded-panel {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color, #e2e8f0);
+}
+.marketing-expanded-panel.open {
+  display: block;
+}
