@@ -1,4 +1,4 @@
-// v20.0.0 - Care N Cure App Logic
+// v21.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -142,75 +142,28 @@ function renderDashboard() {
   const medicines = DB.get('medicines');
   const reminders = DB.get('reminders');
 
-  const lowStockMeds = medicines.filter(m => m.quantity <= (m.lowStockThreshold || 10));
-  const expiringSoon = medicines.filter(m => {
-    const days = daysUntil(m.expiryDate);
-    return days <= 90 && days >= 0;
-  });
-
   const statCust = document.getElementById('statCustomers');
   if (statCust) statCust.textContent = customers.length;
   const statMed = document.getElementById('statMedicines');
   if (statMed) statMed.textContent = medicines.length;
-  const statLow = document.getElementById('statLowStock');
-  if (statLow) statLow.textContent = lowStockMeds.length;
-  const statExp = document.getElementById('statExpiring');
-  if (statExp) statExp.textContent = expiringSoon.length;
 
   // Upcoming reminders
   const pendingReminders = reminders.filter(r => r.status === 'pending').sort((a, b) => new Date(a.finishDate) - new Date(b.finishDate));
   const dashRem = document.getElementById('dashReminders');
   if (dashRem) {
     if (pendingReminders.length === 0) {
-      dashRem.innerHTML = '<div class="empty-state" style="padding:20px;"><p>No pending reminders</p></div>';
+      dashRem.innerHTML = '<div class="empty-state" style="padding:20px;"><p>No pending marketing follow-ups</p></div>';
     } else {
       dashRem.innerHTML = pendingReminders.slice(0, 5).map(r => `
         <div class="reminder-item">
-          <div class="reminder-icon pending">&#9857;</div>
+          <div class="reminder-icon pending">&#128100;</div>
           <div class="reminder-info">
             <h4>${r.customerName}</h4>
-            <p>${r.medicineName}</p>
+            <p>${r.medicineName || 'Marketing Follow-up'}</p>
           </div>
           <div class="reminder-date">${formatDate(r.finishDate)}</div>
         </div>
       `).join('');
-    }
-  }
-
-  // Low stock
-  const dashLowStock = document.getElementById('dashLowStock');
-  if (dashLowStock) {
-    if (lowStockMeds.length === 0) {
-      dashLowStock.innerHTML = '<div class="empty-state" style="padding:20px;"><p>All medicines well stocked</p></div>';
-    } else {
-      dashLowStock.innerHTML = lowStockMeds.slice(0, 5).map(m => `
-        <div class="reminder-item">
-          <div class="reminder-icon ${m.quantity === 0 ? 'failed' : 'pending'}">&#9888;</div>
-          <div class="reminder-info">
-            <h4>${m.name}</h4>
-            <p>${m.company}</p>
-          </div>
-          <div class="reminder-date"><span class="badge ${m.quantity === 0 ? 'badge-danger' : 'badge-warning'}">${m.quantity} left</span></div>
-        </div>
-      `).join('');
-    }
-  }
-
-  // Expiring
-  const dashExpiring = document.getElementById('dashExpiring');
-  if (dashExpiring) {
-    if (expiringSoon.length === 0) {
-      dashExpiring.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No medicines expiring soon</td></tr>';
-    } else {
-      dashExpiring.innerHTML = expiringSoon.slice(0, 5).map(m => {
-        const days = daysUntil(m.expiryDate);
-        return `<tr class="${days <= 30 ? 'expired' : ''}">
-          <td>${m.name}</td>
-          <td>${formatDate(m.expiryDate)}</td>
-          <td>${m.quantity}</td>
-          <td><span class="badge ${days <= 30 ? 'badge-danger' : 'badge-warning'}">${days} days</span></td>
-        </tr>`;
-      }).join('');
     }
   }
 }
