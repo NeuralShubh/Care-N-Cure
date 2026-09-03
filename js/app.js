@@ -371,6 +371,10 @@ function openMedicineModal(id) {
   document.getElementById('medEditId').value = '';
   document.getElementById('medModalTitle').textContent = 'Add Medicine';
   toggleAddCategoryInput(false);
+
+  const deleteBtn = document.getElementById('medDeleteBtn');
+  if (deleteBtn) deleteBtn.style.display = id ? 'inline-flex' : 'none';
+
   let selectedCat = '';
   if (id) {
     const med = DB.get('medicines').find(m => m.id === id);
@@ -386,6 +390,13 @@ function openMedicineModal(id) {
 }
 
 function editMedicine(id) { openMedicineModal(id); }
+
+function deleteCurrentEditMedicine() {
+  const editId = document.getElementById('medEditId').value;
+  if (editId) {
+    deleteMedicine(editId);
+  }
+}
 
 function saveMedicine(e) {
   e.preventDefault();
@@ -427,6 +438,7 @@ function saveMedicine(e) {
 }
 
 function deleteMedicine(id) {
+  closeModal('medicineModal');
   showConfirm('Delete Medicine', 'Are you sure you want to delete this medicine? This action cannot be undone.', function() {
     let medicines = DB.get('medicines');
     medicines = medicines.filter(m => m.id !== id);

@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4.4.0">
+  <link rel="stylesheet" href="css/style.css?v=4.5.0">
 </head>
 <body>
 
@@ -285,9 +285,12 @@
               <button type="button" class="btn btn-sm btn-outline" onclick="toggleAddCategoryInput(false)">Cancel</button>
             </div>
           </div>
-          <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
-            <button type="button" class="btn btn-outline" onclick="closeModal('medicineModal')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Medicine</button>
+          <div class="modal-footer" style="padding:0;border:none;margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+            <button type="button" id="medDeleteBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="deleteCurrentEditMedicine()">&#128465; Delete Medicine</button>
+            <div style="display:flex; gap:12px; margin-left:auto;">
+              <button type="button" class="btn btn-outline" onclick="closeModal('medicineModal')">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Medicine</button>
+            </div>
           </div>
         </form>
       </div>
@@ -425,7 +428,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=4.4.0"></script>
-  <script src="js/app.js?v=4.4.0"></script>
+  <script src="js/data.js?v=4.5.0"></script>
+  <script src="js/app.js?v=4.5.0"></script>
 </body>
 </html>
