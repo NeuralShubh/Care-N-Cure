@@ -486,15 +486,17 @@ textarea.form-control {
   padding: 20px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   border: 1.5px solid var(--border);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .stat-card:hover {
-  box-shadow: 0 6px 16px rgba(14, 165, 198, 0.15);
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  box-shadow: 0 10px 24px rgba(14, 165, 198, 0.2);
   border-color: var(--primary);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
 }
 
 .stat-card .stat-icon {
@@ -506,6 +508,11 @@ textarea.form-control {
   justify-content: center;
   font-size: 22px;
   margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
 }
 
 .stat-card .stat-icon.blue { background: var(--info-bg); color: var(--info); }
@@ -550,6 +557,12 @@ textarea.form-control {
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
   border: 1.5px solid var(--border);
   overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(14, 165, 198, 0.14);
 }
 
 .card-header {
@@ -871,13 +884,15 @@ textarea.form-control {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .reminder-item:hover {
-  background: var(--primary-bg);
+  background: #e0f2fe;
   border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(14, 165, 198, 0.1);
+  box-shadow: 0 6px 16px rgba(14, 165, 198, 0.18);
+  transform: translateX(6px);
 }
 
 .reminder-item .reminder-icon {
