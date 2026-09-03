@@ -222,30 +222,14 @@ function renderMedicines() {
 
   const table = document.getElementById('medicineTable');
   if (medicines.length === 0) {
-    table.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">&#9764;</div><h3>No medicines found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon">&#9764;</div><h3>No medicines found</h3></td></tr>';
     return;
   }
 
   table.innerHTML = medicines.map(m => {
-    const days = daysUntil(m.expiryDate);
-    const isLow = m.quantity <= (m.lowStockThreshold || 10);
-    const isExpired = days < 0;
-    const isExpiringSoon = days >= 0 && days <= 90;
-    let statusBadge = '';
-    if (isExpired) statusBadge = '<span class="badge badge-danger">Expired</span>';
-    else if (m.quantity === 0) statusBadge = '<span class="badge badge-danger">Out of Stock</span>';
-    else if (isLow) statusBadge = '<span class="badge badge-warning">Low Stock</span>';
-    else if (isExpiringSoon) statusBadge = '<span class="badge badge-warning">Expiring Soon</span>';
-    else statusBadge = '<span class="badge badge-success">In Stock</span>';
-
-    return `<tr class="${isLow || isExpired ? (isExpired ? 'expired' : 'low-stock') : ''}">
+    return `<tr>
       <td><strong>${m.name}</strong></td>
-      <td>${m.company}</td>
       <td><span class="badge badge-neutral">${m.category}</span></td>
-      <td>₹${m.price}</td>
-      <td>${m.quantity}</td>
-      <td>${formatDate(m.expiryDate)}${isExpiringSoon && !isExpired ? ` <span style="color:var(--warning);font-size:11px;">(${days}d)</span>` : ''}</td>
-      <td>${statusBadge}</td>
       <td>
         <div class="action-btns">
           <button class="btn-icon btn-edit" onclick="editMedicine('${m.id}')" title="Edit">&#9998;</button>
