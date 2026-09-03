@@ -1,4 +1,4 @@
-// v25.0.0 - Care N Cure App Logic
+// v26.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
