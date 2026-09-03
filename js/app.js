@@ -253,19 +253,13 @@ function openMedicineModal(id) {
   document.getElementById('medicineForm').reset();
   document.getElementById('medEditId').value = '';
   document.getElementById('medModalTitle').textContent = 'Add Medicine';
-  document.getElementById('medLowStock').value = 10;
   if (id) {
     const med = DB.get('medicines').find(m => m.id === id);
     if (med) {
       document.getElementById('medEditId').value = med.id;
       document.getElementById('medModalTitle').textContent = 'Edit Medicine';
       document.getElementById('medName').value = med.name;
-      document.getElementById('medCompany').value = med.company;
       document.getElementById('medCategory').value = med.category;
-      document.getElementById('medPrice').value = med.price;
-      document.getElementById('medQuantity').value = med.quantity;
-      document.getElementById('medExpiryDate').value = med.expiryDate;
-      document.getElementById('medLowStock').value = med.lowStockThreshold || 10;
     }
   }
   document.getElementById('medicineModal').classList.add('active');
@@ -276,23 +270,31 @@ function editMedicine(id) { openMedicineModal(id); }
 function saveMedicine(e) {
   e.preventDefault();
   const editId = document.getElementById('medEditId').value;
-  const medData = {
-    name: document.getElementById('medName').value.trim(),
-    company: document.getElementById('medCompany').value.trim(),
-    category: document.getElementById('medCategory').value,
-    price: parseFloat(document.getElementById('medPrice').value),
-    quantity: parseInt(document.getElementById('medQuantity').value),
-    expiryDate: document.getElementById('medExpiryDate').value,
-    lowStockThreshold: parseInt(document.getElementById('medLowStock').value) || 10
-  };
+  const nameVal = document.getElementById('medName').value.trim();
+  const catVal = document.getElementById('medCategory').value;
 
   let medicines = DB.get('medicines');
   if (editId) {
     const idx = medicines.findIndex(m => m.id === editId);
-    if (idx !== -1) medicines[idx] = { ...medicines[idx], ...medData };
+    if (idx !== -1) {
+      medicines[idx] = {
+        ...medicines[idx],
+        name: nameVal,
+        category: catVal
+      };
+    }
     showToast('Medicine updated successfully', 'success');
   } else {
-    medData.id = DB.generateId();
+    const medData = {
+      id: DB.generateId(),
+      name: nameVal,
+      category: catVal,
+      company: '',
+      price: 0,
+      quantity: 100,
+      expiryDate: '2028-12-31',
+      lowStockThreshold: 10
+    };
     medicines.push(medData);
     showToast('Medicine added successfully', 'success');
   }
