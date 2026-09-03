@@ -548,7 +548,7 @@ function renderCustomers() {
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
     return;
   }
 
@@ -568,15 +568,6 @@ function renderCustomers() {
       </td>
       <td>${c.address || '-'}</td>
       <td><span class="badge badge-info">${purchaseCount} purchases</span></td>
-      <td onclick="event.stopPropagation()">
-        <div class="action-btns">
-          <button class="btn-icon btn-whatsapp" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat on WhatsApp">
-            ${waIconSvg}
-          </button>
-          <button class="btn-icon btn-edit" onclick="editCustomer('${c.id}')" title="Edit Customer">&#9998;</button>
-          <button class="btn-icon btn-delete" onclick="deleteCustomer('${c.id}')" title="Delete Customer">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   }).join('');
 }
