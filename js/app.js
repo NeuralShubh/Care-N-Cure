@@ -620,8 +620,28 @@ function openCustomerWhatsApp(customerId, e) {
     return;
   }
   const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
-  const message = encodeURIComponent(`Hello ${cust.name}, greetings from Care N Cure Medical Shop! How can we assist you today?`);
-  window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+
+  // Dynamically fetch medicine name(s) purchased by this customer
+  const purchases = DB.get('purchases') || [];
+  const reminders = DB.get('reminders') || [];
+
+  const custPurchases = purchases.filter(p => p.customerId === customerId);
+  const custReminders = reminders.filter(r => r.customerId === customerId);
+
+  const purMedNames = custPurchases.map(p => p.medicineName).filter(Boolean);
+  const remMedNames = custReminders.map(r => r.medicineName).filter(Boolean);
+
+  const allMedNames = [...new Set([...purMedNames, ...remMedNames])];
+
+  let messageText = '';
+  if (allMedNames.length > 0) {
+    const medsString = allMedNames.join(', ');
+    messageText = `Hello ${cust.name}, we hope you are doing well. You recently purchased ${medsString} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
+  } else {
+    messageText = `Hello ${cust.name}, we hope you are doing well. Thank you for choosing Care N Cure. Please take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
+  }
+
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 
 function renderCustomers() {
