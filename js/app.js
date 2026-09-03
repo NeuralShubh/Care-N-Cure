@@ -1,4 +1,4 @@
-// v15.0.0 - Care N Cure App Logic
+// v16.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -902,11 +902,38 @@ function viewCustomerHistory(customerId) {
 
 
 // ===================== REMINDERS =====================
+// ===================== REMINDERS =====================
 function autoGenerateReminders() {
-  if (!DB.getConfig('defaultRemindersCleaned_v5')) {
+  if (!DB.getConfig('defaultRemindersCleaned_v6')) {
     DB.set('reminders', []);
-    DB.setConfig('defaultRemindersCleaned_v5', true);
+    DB.setConfig('defaultRemindersCleaned_v6', true);
   }
+}
+
+function onAddRemCustomerChange() {
+  const custId = document.getElementById('addRemCustomer').value;
+  const medSel = document.getElementById('addRemMedicine');
+  if (!medSel) return;
+
+  const purchases = DB.get('purchases') || [];
+  const medicines = DB.get('medicines') || [];
+
+  if (!custId) {
+    medSel.innerHTML = '<option value="">Select Medicine</option>' +
+      medicines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    return;
+  }
+
+  const custPurchases = purchases.filter(p => p.customerId === custId);
+  const purchasedMedIds = new Set(custPurchases.map(p => p.medicineId));
+
+  let matchedMeds = medicines.filter(m => purchasedMedIds.has(m.id));
+  if (matchedMeds.length === 0) {
+    matchedMeds = medicines;
+  }
+
+  medSel.innerHTML = '<option value="">Select Medicine</option>' +
+    matchedMeds.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 }
 
 function openAddReminderModal() {
@@ -920,12 +947,7 @@ function openAddReminderModal() {
       custs.map(c => `<option value="${c.id}">${c.name} (${c.mobile})</option>`).join('');
   }
 
-  const medSel = document.getElementById('addRemMedicine');
-  const meds = DB.get('medicines') || [];
-  if (medSel) {
-    medSel.innerHTML = '<option value="">Select Medicine</option>' +
-      meds.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  }
+  onAddRemCustomerChange();
 
   const defaultDate = new Date();
   defaultDate.setDate(defaultDate.getDate() + 7);
@@ -952,6 +974,8 @@ function saveNewReminder(e) {
     return;
   }
 
+  const defaultMsg = `Hello ${customer.name}, your ${med.name} tablets are about to finish on ${formatDate(finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+
   let reminders = DB.get('reminders') || [];
   reminders.push({
     id: DB.generateId(),
@@ -961,6 +985,8 @@ function saveNewReminder(e) {
     medicineId: med.id,
     medicineName: med.name,
     finishDate: finishDate,
+    customMessage: defaultMsg,
+    isCustomMessage: false,
     status: 'pending',
     createdAt: new Date().toISOString().split('T')[0]
   });
@@ -970,6 +996,67 @@ function saveNewReminder(e) {
   updateBadges();
   renderReminders();
   showToast('Reminder added successfully', 'success');
+}
+
+function onReminderDateChange(remId, newDateStr) {
+  let reminders = DB.get('reminders') || [];
+  const rem = reminders.find(r => r.id === remId);
+  if (!rem) return;
+
+  rem.finishDate = newDateStr;
+
+  if (!rem.isCustomMessage) {
+    rem.customMessage = `Hello ${rem.customerName}, your ${rem.medicineName} tablets are about to finish on ${formatDate(newDateStr)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+  }
+
+  DB.set('reminders', reminders);
+  renderReminders();
+  showToast('Reminder date updated', 'info');
+}
+
+function onReminderMessageInput(remId, newText) {
+  let reminders = DB.get('reminders') || [];
+  const rem = reminders.find(r => r.id === remId);
+  if (!rem) return;
+
+  rem.customMessage = newText;
+  rem.isCustomMessage = true;
+  DB.set('reminders', reminders);
+}
+
+function saveReminderMessage(remId) {
+  const input = document.getElementById(`remMsgInput_${remId}`);
+  if (input) {
+    onReminderMessageInput(remId, input.value);
+    showToast('Message saved successfully', 'success');
+  }
+}
+
+function sendWhatsAppReminderDirect(remId) {
+  let reminders = DB.get('reminders') || [];
+  const rem = reminders.find(r => r.id === remId);
+  if (!rem) return;
+
+  const msgInput = document.getElementById(`remMsgInput_${remId}`);
+  const messageText = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : (rem.customMessage || `Hello ${rem.customerName}, your ${rem.medicineName} tablets are about to finish on ${formatDate(rem.finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`);
+
+  const cleanMobile = (rem.customerMobile || '').replace(/\D/g, '');
+  if (!cleanMobile) {
+    showToast('Invalid mobile number', 'error');
+    return;
+  }
+  const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
+
+  window.open(whatsappUrl, '_blank');
+
+  rem.status = 'sent';
+  rem.sentAt = new Date().toISOString();
+  DB.set('reminders', reminders);
+
+  updateBadges();
+  renderReminders();
+  showToast('Reminder marked as Sent & WhatsApp opened', 'success');
 }
 
 function deleteReminder(id, e) {
@@ -1017,11 +1104,24 @@ function renderReminders() {
 
   container.innerHTML = reminders.map(r => {
     const daysLeft = daysUntil(r.finishDate);
+    let dateBadgeClass = 'badge-info';
+    let dateBadgeText = `${daysLeft} days left`;
+    if (daysLeft < 0) {
+      dateBadgeClass = 'badge-danger';
+      dateBadgeText = `${Math.abs(daysLeft)} days overdue`;
+    } else if (daysLeft === 0) {
+      dateBadgeClass = 'badge-warning';
+      dateBadgeText = `Due Today`;
+    }
+
+    const currentMsg = r.customMessage || `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish on ${formatDate(r.finishDate)}. Please purchase your next medicine on time. Thank you. – Care N Cure`;
+
     let actionBtns = '';
     if (r.status === 'pending') {
       actionBtns = `
-        <div style="display:flex; gap:6px;">
-          <button class="btn btn-success btn-sm" onclick="openWhatsAppReminder('${r.customerId}', '${r.medicineId}', '${r.finishDate}')">&#128172; Send</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="saveReminderMessage('${r.id}')">&#128190; Save Message</button>
+          <button class="btn btn-success btn-sm" onclick="sendWhatsAppReminderDirect('${r.id}')">&#128172; Send</button>
           <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
         </div>
       `;
@@ -1030,20 +1130,41 @@ function renderReminders() {
         <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Reminder">&#128465;</button>
       `;
     }
-    const defaultMsg = `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
+
     return `
-      <div class="reminder-item" style="padding:16px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:260px;">
-          <div class="reminder-icon ${r.status}" style="margin-top:2px;">${r.status === 'pending' ? '&#9857;' : r.status === 'sent' ? '&#10003;' : '&#10007;'}</div>
-          <div class="reminder-info">
-            <h4 style="margin:0 0 4px 0; font-size:15px; color:var(--text-primary); font-weight:600;">${r.customerName} - ${r.medicineName}</h4>
-            <p style="margin:0 0 6px 0; font-size:13px; color:var(--text-secondary);">Mobile: ${r.customerMobile} | Finish: ${formatDate(r.finishDate)}${daysLeft >= 0 ? ` (${daysLeft} days left)` : ' (Overdue)'}</p>
-            <div class="message-preview-box" style="font-size:12px; color:var(--text-secondary); background:var(--body-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--border-light);">
-              <strong style="color:var(--text-primary);">Message Section:</strong> "${defaultMsg}"
+      <div class="reminder-item" style="padding:18px; border-bottom:1px solid var(--border-light); background:var(--card-bg); border-radius:var(--radius-lg); margin-bottom:16px; border:1px solid var(--border-color);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+          <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:280px;">
+            <div class="reminder-icon ${r.status}" style="margin-top:2px;">
+              ${r.status === 'pending' ? '&#9857;' : r.status === 'sent' ? '&#10003;' : '&#10007;'}
+            </div>
+            <div>
+              <h4 style="margin:0 0 4px 0; font-size:16px; color:var(--text-primary); font-weight:700;">
+                ${r.customerName} - <span style="color:var(--primary);">${r.medicineName}</span>
+              </h4>
+              <p style="margin:0; font-size:13px; color:var(--text-secondary);">
+                <strong>Mobile:</strong> ${r.customerMobile}
+              </p>
             </div>
           </div>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+              <label style="font-size:11px; font-weight:600; color:var(--text-secondary);">Reminder Date:</label>
+              <input type="date" value="${r.finishDate}" class="form-control" style="font-size:12px; padding:4px 8px; width:auto;" onchange="onReminderDateChange('${r.id}', this.value)">
+            </div>
+            <span class="badge ${dateBadgeClass}" style="font-size:12px; padding:6px 10px;">${dateBadgeText}</span>
+          </div>
         </div>
-        <div class="reminder-date" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+
+        <div style="background:var(--body-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); margin-top:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:700; color:var(--text-primary);">Message Section (Editable):</label>
+            <span style="font-size:11px; color:var(--text-muted);">${r.isCustomMessage ? '&#9998; Custom Edited' : '&#9881; Auto-generated'}</span>
+          </div>
+          <textarea id="remMsgInput_${r.id}" class="form-control" rows="2" style="font-size:13px; resize:vertical;" oninput="onReminderMessageInput('${r.id}', this.value)" placeholder="Enter reminder message...">${currentMsg}</textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:12px;">
           ${actionBtns}
           <span class="badge badge-${r.status === 'pending' ? 'warning' : r.status === 'sent' ? 'success' : 'danger'}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
         </div>
