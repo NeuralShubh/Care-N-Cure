@@ -182,7 +182,8 @@ function renderMedicines() {
   populateMedCategoryFilter();
   const search = document.getElementById('medSearch').value.toLowerCase();
   const category = document.getElementById('medCategoryFilter').value;
-  const stockFilter = document.getElementById('medStockFilter').value;
+  const stockFilterElem = document.getElementById('medStockFilter');
+  const stockFilter = stockFilterElem ? stockFilterElem.value : '';
 
   let medicines = DB.get('medicines');
   if (search) {
