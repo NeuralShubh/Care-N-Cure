@@ -265,7 +265,8 @@ function populateMedCategoryDropdown(selectedVal = '') {
   if (!sel) return;
   sel.innerHTML = '<option value="">Select Category</option>' +
     categories.map(c => `<option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>`).join('') +
-    '<option value="__add_new__" style="font-weight:600; color:var(--primary);">+ Add New Category...</option>';
+    '<option value="__add_new__" style="font-weight:600; color:var(--primary);">+ Add New Category...</option>' +
+    '<option value="__delete_cat__" style="font-weight:600; color:var(--danger);">&#128465; Delete Category...</option>';
 }
 
 function toggleAddCategoryInput(show) {
@@ -284,7 +285,55 @@ function handleCategorySelectChange(selectElem) {
   if (selectElem.value === '__add_new__') {
     selectElem.value = '';
     toggleAddCategoryInput(true);
+  } else if (selectElem.value === '__delete_cat__') {
+    selectElem.value = '';
+    openDeleteCategoryModal();
   }
+}
+
+function openDeleteCategoryModal() {
+  const container = document.getElementById('deleteCategoryList');
+  if (!container) return;
+  const categories = getCategories();
+  
+  if (categories.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:12px;">No categories available</div>';
+  } else {
+    container.innerHTML = categories.map(cat => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--body-bg); border-radius:6px; border:1px solid var(--border-light);">
+        <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${cat}</span>
+        <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory('${cat}')" style="padding:4px 10px; font-size:12px;">
+          &#128465; Delete
+        </button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('deleteCategoryModal').classList.add('active');
+}
+
+function deleteCategory(catName) {
+  showConfirm('Delete Category', `Are you sure you want to delete the category "${catName}"?`, function() {
+    let customCats = DB.get('customCategories') || [];
+    customCats = customCats.filter(c => c !== catName);
+    DB.set('customCategories', customCats);
+
+    let medicines = DB.get('medicines') || [];
+    let updated = false;
+    medicines.forEach(m => {
+      if (m.category === catName) {
+        m.category = 'Other';
+        updated = true;
+      }
+    });
+    if (updated) DB.set('medicines', medicines);
+
+    populateMedCategoryDropdown();
+    populateMedCategoryFilter();
+    renderMedicines();
+    openDeleteCategoryModal();
+    showToast(`Category "${catName}" deleted`, 'success');
+  });
 }
 
 function addNewCategory() {

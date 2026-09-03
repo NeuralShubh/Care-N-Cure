@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4.1.2">
+  <link rel="stylesheet" href="css/style.css?v=4.2.0">
 </head>
 <body>
 
@@ -406,7 +406,26 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=4.1.2"></script>
-  <script src="js/app.js?v=4.1.2"></script>
+  <!-- Delete Category Modal -->
+  <div id="deleteCategoryModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'deleteCategoryModal')">
+    <div class="modal" style="max-width:450px;">
+      <div class="modal-header">
+        <h3>Delete Category</h3>
+        <button class="modal-close" onclick="closeModal('deleteCategoryModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">Select a category to delete:</p>
+        <div id="deleteCategoryList" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto;">
+          <!-- JS renders categories with Delete buttons -->
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+          <button class="btn btn-outline" onclick="closeModal('deleteCategoryModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=4.2.0"></script>
+  <script src="js/app.js?v=4.2.0"></script>
 </body>
 </html>
