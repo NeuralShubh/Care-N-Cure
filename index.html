@@ -68,7 +68,7 @@
 
         <div class="nav-section">Reminders</div>
         <a class="nav-item" data-page="reminders" onclick="navigateTo('reminders')">
-          <span class="nav-icon">&#9857;</span> Medicine Reminders
+          <span class="nav-icon">&#9857;</span> Reminders
           <span id="navRemAlerts" class="nav-badge" style="display:none;"></span>
         </a>
       </nav>
@@ -133,7 +133,7 @@
           <div class="dashboard-grid">
             <div class="card">
               <div class="card-header">
-                <h3>Upcoming Medicine Reminders</h3>
+                <h3>Upcoming Reminders</h3>
                 <button class="btn btn-sm btn-outline" onclick="navigateTo('reminders')">View All</button>
               </div>
               <div class="card-body">
@@ -218,7 +218,7 @@
               <div class="table-container">
                 <table class="data-table">
                   <thead>
-                    <tr><th>Name</th><th>Mobile</th><th>Address</th><th>Purchases</th></tr>
+                    <tr><th>Name</th><th>Address</th><th>Mobile</th></tr>
                   </thead>
                   <tbody id="customerTable"></tbody>
                 </table>
@@ -231,6 +231,12 @@
 
         <!-- ========== REMINDERS ========== -->
         <section id="page-reminders" class="page-section">
+          <div class="toolbar">
+            <div class="search-box">
+              <span class="search-icon">&#128269;</span>
+              <input type="text" id="remSearch" placeholder="Search reminders by customer, medicine or mobile..." oninput="renderReminders()">
+            </div>
+          </div>
           <div class="tabs">
             <button class="tab active" data-tab="pending" onclick="switchReminderTab('pending')">Pending</button>
             <button class="tab" data-tab="sent" onclick="switchReminderTab('sent')">Sent</button>
@@ -360,12 +366,7 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <div id="custSelectedMedsList" style="display:none; margin-top:12px;">
-            <!-- JS renders selected medicine cards with Quantity & Days Supply inputs -->
-          </div>
-          <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
+          </div>          <div class="modal-footer" style="padding:0;border:none;margin-top:20px;">
             <button type="button" class="btn btn-outline" onclick="closeModal('customerModal')">Cancel</button>
             <button type="submit" class="btn btn-primary">Save Customer</button>
           </div>
@@ -373,8 +374,6 @@
       </div>
     </div>
   </div>
-
-
 
   <!-- Customer Purchase History Modal -->
   <div id="custHistoryModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'custHistoryModal')">
@@ -408,16 +407,21 @@
 
   <!-- WhatsApp Message Modal -->
   <div id="whatsappModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'whatsappModal')">
-    <div class="modal" style="max-width:480px;">
+    <div class="modal" style="max-width:520px;">
       <div class="modal-header">
         <h3>WhatsApp Reminder</h3>
         <button class="modal-close" onclick="closeModal('whatsappModal')">&times;</button>
       </div>
-      <div class="modal-body" style="text-align:center;">
-        <p style="margin-bottom:12px;color:var(--text-secondary);">Message preview for:</p>
-        <p id="whatsappRecipient" style="font-weight:600;margin-bottom:16px;"></p>
-        <div class="whatsapp-preview" id="whatsappMessage"></div>
-        <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;">
+      <div class="modal-body">
+        <div style="margin-bottom:16px;">
+          <span style="color:var(--text-secondary); font-size:13px;">Recipient: </span>
+          <strong id="whatsappRecipient" style="color:var(--text-primary); font-size:14px;"></strong>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:600; font-size:13px; margin-bottom:6px; display:block;">Message Section (Create / Edit Message)</label>
+          <textarea id="whatsappMessageText" class="form-control" rows="4" placeholder="Enter reminder message..."></textarea>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
           <button class="btn btn-outline" onclick="closeModal('whatsappModal')">Cancel</button>
           <button class="btn btn-success" id="whatsappSendBtn" onclick="sendWhatsAppReminder()">
             &#128172; Send via WhatsApp

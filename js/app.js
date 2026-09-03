@@ -59,7 +59,7 @@ function navigateTo(page) {
     dashboard: ['Dashboard', "Welcome back! Here's your overview."],
     medicines: ['Medicines', 'Manage medicine inventory.'],
     customers: ['Customers', 'Manage customer records.'],
-    reminders: ['Medicine Reminders', 'Manage patient medicine reminders.']
+    reminders: ['Reminders', 'Manage patient reminders.']
   };
   if (titles[page]) {
     document.getElementById('pageTitle').textContent = titles[page][0];
@@ -434,33 +434,9 @@ function updateCustMedUI() {
   }
 
   const configList = document.getElementById('custSelectedMedsList');
-  if (!configList) return;
-  if (count === 0) {
+  if (configList) {
     configList.style.display = 'none';
     configList.innerHTML = '';
-  } else {
-    configList.style.display = 'block';
-    configList.innerHTML = `
-      <div style="font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Selected Medicines (${count})</div>
-      ${selectedList.map(m => `
-        <div class="med-item-card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-weight:600; font-size:13px; color:var(--text-primary);">${m.name}${m.company ? ` (${m.company})` : ''}</span>
-            <span style="font-size:12px; color:var(--primary); font-weight:600;">₹${m.price}</span>
-          </div>
-          <div class="form-row" style="margin:0; gap:10px;">
-            <div class="form-group" style="margin:0; flex:1;">
-              <label style="font-size:11px; margin-bottom:2px;">Quantity</label>
-              <input type="number" class="form-control" min="1" value="${m.quantity}" onchange="updateCustMedConfig('${m.id}', 'quantity', this.value)" style="padding:4px 8px; font-size:12px; height:32px;">
-            </div>
-            <div class="form-group" style="margin:0; flex:1;">
-              <label style="font-size:11px; margin-bottom:2px;">Days Supply (Reminder)</label>
-              <input type="number" class="form-control" min="1" value="${m.daysSupply}" onchange="updateCustMedConfig('${m.id}', 'daysSupply', this.value)" style="padding:4px 8px; font-size:12px; height:32px;">
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    `;
   }
 }
 
@@ -537,27 +513,27 @@ function renderCustomers() {
   populateCustMedicineDropdown();
   const search = document.getElementById('custSearch').value.toLowerCase();
   let customers = DB.get('customers');
-  const purchases = DB.get('purchases');
 
   if (search) {
     customers = customers.filter(c =>
       c.name.toLowerCase().includes(search) ||
-      c.mobile.includes(search)
+      c.mobile.includes(search) ||
+      (c.address && c.address.toLowerCase().includes(search))
     );
   }
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
     return;
   }
 
   const waIconSvg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.83L2.5 21.5l3.82-1.35C7.9 21.32 9.89 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.2.57-1.02 1.1-1.63 1.23-.42.09-.97.16-2.82-.6-2.36-.97-3.88-3.37-4-3.53-.12-.16-.97-1.29-.97-2.46 0-1.17.61-1.74.83-1.98.22-.24.48-.3.64-.3s.33 0 .47.01c.15.01.35-.06.55.42.2.48.69 1.68.75 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.25.31-.36.42-.12.12-.25.25-.11.49.14.24.63 1.04 1.35 1.68.93.83 1.71 1.09 1.95 1.21.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.14 1.15z"/></svg>`;
 
   table.innerHTML = customers.map(c => {
-    const purchaseCount = purchases.filter(p => p.customerId === c.id).length;
     return `<tr onclick="viewCustomerHistory('${c.id}')" style="cursor:pointer;" title="Click to view details and actions">
       <td><strong>${c.name}</strong></td>
+      <td>${c.address || '-'}</td>
       <td>
         <div style="display:inline-flex; align-items:center; gap:8px;">
           <span>${c.mobile}</span>
@@ -566,8 +542,6 @@ function renderCustomers() {
           </button>
         </div>
       </td>
-      <td>${c.address || '-'}</td>
-      <td><span class="badge badge-info">${purchaseCount} purchases</span></td>
     </tr>`;
   }).join('');
 }
@@ -812,13 +786,25 @@ function switchReminderTab(tab) {
 }
 
 function renderReminders() {
+  const searchInput = document.getElementById('remSearch');
+  const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
   let reminders = DB.get('reminders');
   reminders = reminders.filter(r => r.status === currentReminderTab);
+
+  if (search) {
+    reminders = reminders.filter(r =>
+      (r.customerName && r.customerName.toLowerCase().includes(search)) ||
+      (r.medicineName && r.medicineName.toLowerCase().includes(search)) ||
+      (r.customerMobile && r.customerMobile.includes(search))
+    );
+  }
+
   reminders.sort((a, b) => new Date(a.finishDate) - new Date(b.finishDate));
 
   const container = document.getElementById('reminderList');
   if (reminders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128172;</div><h3>No ${currentReminderTab} reminders</h3><p>${currentReminderTab === 'pending' ? 'Reminders will be auto-generated when customers purchase medicines.' : 'No reminders in this category yet.'}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128172;</div><h3>No ${currentReminderTab} reminders found</h3><p>${currentReminderTab === 'pending' ? 'Reminders will be auto-generated when customers purchase medicines.' : 'No reminders in this category.'}</p></div>`;
     return;
   }
 
@@ -830,16 +816,22 @@ function renderReminders() {
         <button class="btn btn-success btn-sm" onclick="openWhatsAppReminder('${r.customerId}', '${r.medicineId}', '${r.finishDate}')">&#128172; Send</button>
       `;
     }
+    const defaultMsg = `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
     return `
-      <div class="reminder-item">
-        <div class="reminder-icon ${r.status}">${r.status === 'pending' ? '&#9857;' : r.status === 'sent' ? '&#10003;' : '&#10007;'}</div>
-        <div class="reminder-info">
-          <h4>${r.customerName} - ${r.medicineName}</h4>
-          <p>Mobile: ${r.customerMobile} | Finish: ${formatDate(r.finishDate)}${daysLeft >= 0 ? ` (${daysLeft} days left)` : ' (Overdue)'}</p>
+      <div class="reminder-item" style="padding:16px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:260px;">
+          <div class="reminder-icon ${r.status}" style="margin-top:2px;">${r.status === 'pending' ? '&#9857;' : r.status === 'sent' ? '&#10003;' : '&#10007;'}</div>
+          <div class="reminder-info">
+            <h4 style="margin:0 0 4px 0; font-size:15px; color:var(--text-primary); font-weight:600;">${r.customerName} - ${r.medicineName}</h4>
+            <p style="margin:0 0 6px 0; font-size:13px; color:var(--text-secondary);">Mobile: ${r.customerMobile} | Finish: ${formatDate(r.finishDate)}${daysLeft >= 0 ? ` (${daysLeft} days left)` : ' (Overdue)'}</p>
+            <div class="message-preview-box" style="font-size:12px; color:var(--text-secondary); background:var(--body-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--border-light);">
+              <strong style="color:var(--text-primary);">Message Section:</strong> "${defaultMsg}"
+            </div>
+          </div>
         </div>
-        <div class="reminder-date">
+        <div class="reminder-date" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
           ${actionBtns}
-          <span class="badge badge-${r.status === 'pending' ? 'warning' : r.status === 'sent' ? 'success' : 'danger'}" style="margin-top:4px;">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
+          <span class="badge badge-${r.status === 'pending' ? 'warning' : r.status === 'sent' ? 'success' : 'danger'}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
         </div>
       </div>
     `;
@@ -852,12 +844,16 @@ function openWhatsAppReminder(customerId, medicineId, finishDate) {
   const med = DB.get('medicines').find(m => m.id === medicineId);
   if (!customer || !med) return;
 
-  const message = `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
+  const defaultMessage = `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
 
   currentWhatsAppReminder = { customerId, medicineId, finishDate };
 
-  document.getElementById('whatsappRecipient').textContent = `${customer.name} (${customer.mobile})`;
-  document.getElementById('whatsappMessage').textContent = message;
+  const recipientElem = document.getElementById('whatsappRecipient');
+  if (recipientElem) recipientElem.textContent = `${customer.name} (${customer.mobile})`;
+
+  const msgInput = document.getElementById('whatsappMessageText');
+  if (msgInput) msgInput.value = defaultMessage;
+
   document.getElementById('whatsappModal').classList.add('active');
 }
 
@@ -868,8 +864,11 @@ function sendWhatsAppReminder() {
   const med = DB.get('medicines').find(m => m.id === currentWhatsAppReminder.medicineId);
   if (!customer || !med) return;
 
-  const message = `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
-  const phone = customer.mobile.startsWith('+91') ? customer.mobile : '+91' + customer.mobile;
+  const msgInput = document.getElementById('whatsappMessageText');
+  const message = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : `Hello ${customer.name}, your ${med.name} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
+  
+  const cleanMobile = customer.mobile.replace(/\D/g, '');
+  const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
   const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
   // Update reminder status
