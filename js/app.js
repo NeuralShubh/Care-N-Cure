@@ -240,28 +240,98 @@ function renderMedicines() {
   }).join('');
 }
 
+function getCategories() {
+  const defaultCats = ['Analgesic', 'Antibiotic', 'Antihistamine', 'Antidiabetic', 'Antacid', 'Cardiovascular', 'Vitamin', 'Other'];
+  const customCats = DB.get('customCategories') || [];
+  const medicines = DB.get('medicines') || [];
+  const medCats = medicines.map(m => m.category).filter(Boolean);
+  const set = new Set([...defaultCats, ...customCats, ...medCats]);
+  return Array.from(set).sort();
+}
+
 function populateMedCategoryFilter() {
-  const medicines = DB.get('medicines');
-  const categories = [...new Set(medicines.map(m => m.category))].sort();
+  const categories = getCategories();
   const sel = document.getElementById('medCategoryFilter');
+  if (!sel) return;
   const current = sel.value;
   sel.innerHTML = '<option value="">All Categories</option>' +
     categories.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
+}
+
+function populateMedCategoryDropdown(selectedVal = '') {
+  const categories = getCategories();
+  const sel = document.getElementById('medCategory');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Select Category</option>' +
+    categories.map(c => `<option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>`).join('') +
+    '<option value="__add_new__" style="font-weight:600; color:var(--primary);">+ Add New Category...</option>';
+}
+
+function toggleAddCategoryInput(show) {
+  const container = document.getElementById('newCategoryContainer');
+  if (!container) return;
+  const isHidden = container.style.display === 'none' || !container.style.display;
+  const shouldShow = show !== undefined ? show : isHidden;
+  container.style.display = shouldShow ? 'flex' : 'none';
+  if (shouldShow) {
+    const input = document.getElementById('newCategoryName');
+    if (input) { input.value = ''; input.focus(); }
+  }
+}
+
+function handleCategorySelectChange(selectElem) {
+  if (selectElem.value === '__add_new__') {
+    selectElem.value = '';
+    toggleAddCategoryInput(true);
+  }
+}
+
+function addNewCategory() {
+  const input = document.getElementById('newCategoryName');
+  if (!input) return;
+  const newCat = input.value.trim();
+  if (!newCat) {
+    showToast('Please enter a category name', 'error');
+    return;
+  }
+
+  let customCats = DB.get('customCategories') || [];
+  const allCats = getCategories();
+  const existingMatch = allCats.find(c => c.toLowerCase() === newCat.toLowerCase());
+
+  if (existingMatch) {
+    populateMedCategoryDropdown(existingMatch);
+    populateMedCategoryFilter();
+    toggleAddCategoryInput(false);
+    showToast(`Category "${existingMatch}" selected`, 'info');
+    return;
+  }
+
+  customCats.push(newCat);
+  DB.set('customCategories', customCats);
+
+  populateMedCategoryDropdown(newCat);
+  populateMedCategoryFilter();
+  toggleAddCategoryInput(false);
+  showToast(`Category "${newCat}" added successfully`, 'success');
 }
 
 function openMedicineModal(id) {
   document.getElementById('medicineForm').reset();
   document.getElementById('medEditId').value = '';
   document.getElementById('medModalTitle').textContent = 'Add Medicine';
+  toggleAddCategoryInput(false);
+  let selectedCat = '';
   if (id) {
     const med = DB.get('medicines').find(m => m.id === id);
     if (med) {
       document.getElementById('medEditId').value = med.id;
       document.getElementById('medModalTitle').textContent = 'Edit Medicine';
       document.getElementById('medName').value = med.name;
-      document.getElementById('medCategory').value = med.category;
+      selectedCat = med.category;
     }
   }
+  populateMedCategoryDropdown(selectedCat);
   document.getElementById('medicineModal').classList.add('active');
 }
 
