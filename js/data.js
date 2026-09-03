@@ -83,13 +83,7 @@ function seedData() {
     }
   ];
 
-  const reminders = [
-    {
-      id: 'rem1', customerId: 'cust2', customerName: 'Anita Desai', customerMobile: '9988776656',
-      medicineId: 'med3', medicineName: 'Cetirizine 10mg', finishDate: '2026-09-12',
-      status: 'pending', createdAt: '2026-09-02'
-    }
-  ];
+  const reminders = [];
 
   DB.set('employees', employees);
   DB.set('medicines', medicines);

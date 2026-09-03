@@ -1,4 +1,4 @@
-// v13.0.0 - Care N Cure App Logic
+// v14.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -794,26 +794,12 @@ function saveCustomer(e) {
           billId: ''
         });
 
-        // Add reminder
-        reminders.push({
-          id: DB.generateId(),
-          customerId: customerId,
-          customerName: custData.name,
-          customerMobile: custData.mobile,
-          medicineId: med.id,
-          medicineName: med.name,
-          finishDate: finishDateStr,
-          status: 'pending',
-          createdAt: todayStr
-        });
-
         // Deduct medicine stock
         med.quantity = Math.max(0, med.quantity - qty);
       }
     });
 
     DB.set('purchases', purchases);
-    DB.set('reminders', reminders);
     DB.set('medicines', medicines);
   }
 
@@ -917,32 +903,10 @@ function viewCustomerHistory(customerId) {
 
 // ===================== REMINDERS =====================
 function autoGenerateReminders() {
-  const purchases = DB.get('purchases');
-  const customers = DB.get('customers');
-  let reminders = DB.get('reminders');
-
-  purchases.forEach(p => {
-    const existing = reminders.find(r => r.medicineId === p.medicineId && r.customerId === p.customerId && r.finishDate === p.finishDate);
-    if (!existing) {
-      const customer = customers.find(c => c.id === p.customerId);
-      const med = DB.get('medicines').find(m => m.id === p.medicineId);
-      if (customer && med) {
-        reminders.push({
-          id: DB.generateId(),
-          customerId: p.customerId,
-          customerName: customer.name,
-          customerMobile: customer.mobile,
-          medicineId: p.medicineId,
-          medicineName: p.medicineName,
-          finishDate: p.finishDate,
-          status: 'pending',
-          createdAt: new Date().toISOString().split('T')[0]
-        });
-      }
-    }
-  });
-
-  DB.set('reminders', reminders);
+  if (!DB.getConfig('defaultRemindersCleaned_v5')) {
+    DB.set('reminders', []);
+    DB.setConfig('defaultRemindersCleaned_v5', true);
+  }
 }
 
 function openAddReminderModal() {
@@ -1020,7 +984,7 @@ function renderReminders() {
   const searchInput = document.getElementById('remSearch');
   const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-  let reminders = DB.get('reminders');
+  let reminders = DB.get('reminders') || [];
   reminders = reminders.filter(r => r.status === currentReminderTab);
 
   if (search) {
@@ -1035,7 +999,7 @@ function renderReminders() {
 
   const container = document.getElementById('reminderList');
   if (reminders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128172;</div><h3>No ${currentReminderTab} reminders found</h3><p>${currentReminderTab === 'pending' ? 'Reminders will be auto-generated when customers purchase medicines.' : 'No reminders in this category.'}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128172;</div><h3>No ${currentReminderTab} reminders found</h3><p>Click "+ Add Reminder" button above to create a new reminder.</p></div>`;
     return;
   }
 
@@ -1044,7 +1008,14 @@ function renderReminders() {
     let actionBtns = '';
     if (r.status === 'pending') {
       actionBtns = `
-        <button class="btn btn-success btn-sm" onclick="openWhatsAppReminder('${r.customerId}', '${r.medicineId}', '${r.finishDate}')">&#128172; Send</button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-success btn-sm" onclick="openWhatsAppReminder('${r.customerId}', '${r.medicineId}', '${r.finishDate}')">&#128172; Send</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')" title="Delete Reminder">&#128465;</button>
+        </div>
+      `;
+    } else {
+      actionBtns = `
+        <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')" title="Delete Reminder">&#128465;</button>
       `;
     }
     const defaultMsg = `Hello ${r.customerName}, your ${r.medicineName} tablets are about to finish. Please purchase your next medicine on time. Thank you.`;
