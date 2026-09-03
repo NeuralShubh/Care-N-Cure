@@ -1,4 +1,4 @@
-// v19.0.0 - Care N Cure App Logic
+// v20.0.0 - Care N Cure App Logic
 let currentUser = null;
 let currentPage = 'dashboard';
 let billItems = [];
@@ -678,7 +678,7 @@ function openCustomerWhatsApp(customerId, e) {
 
   const medsString = allMedNames.length > 0 ? allMedNames.join(', ') : 'medicines';
 
-  const messageText = `Hello ${formattedName}, we hope you are doing well. You recently purchased ${medsString} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! ❤️ – Care N Cure`;
+  const messageText = `Hello ${formattedName}, we hope you are doing well. You recently purchased ${medsString} from Care N Cure. Please take your medicine as advised and take good care of yourself. If you need any medicines or healthcare assistance, we are always here for you. Stay healthy! Care N Cure`;
 
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
@@ -944,7 +944,7 @@ function syncCustomerReminders() {
             d.setDate(d.getDate() + 7);
             return d.toISOString().split('T')[0];
           })();
-          const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
+          const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
 
           reminders.push({
             id: DB.generateId(),
@@ -976,7 +976,7 @@ function syncCustomerReminders() {
           d.setDate(d.getDate() + 7);
           return d.toISOString().split('T')[0];
         })();
-        const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
+        const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
 
         reminders.push({
           id: DB.generateId(),
@@ -1072,7 +1072,7 @@ function saveNewReminder(e) {
 
   let reminders = DB.get('reminders') || [];
   const tpls = getMarketingTemplates();
-  const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️';
+  const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure';
 
   dates.forEach(finishDate => {
     const defaultMsg = defaultTpl.replace(/{customerName}/g, customer.name);
@@ -1167,7 +1167,7 @@ function onReminderDateChange(remId, newDateStr) {
 
   if (!rem.isCustomMessage) {
     const tpls = getMarketingTemplates();
-    const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️';
+    const defaultTpl = tpls[0] ? tpls[0].message : 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure';
     rem.customMessage = defaultTpl.replace(/{customerName}/g, rem.customerName);
   }
 
@@ -1292,7 +1292,7 @@ function renderReminders() {
       dateBadgeText = `Due Today`;
     }
 
-    const currentMsg = r.customMessage || `Hello ${r.customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`;
+    const currentMsg = r.customMessage || `Hello ${r.customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
     const isChecked = r.status === 'completed';
 
     const tplOptions = templates.map((t, idx) => `<option value="${idx}">${t.title}</option>`).join('');
@@ -1367,22 +1367,34 @@ function renderReminders() {
 // ===================== MESSAGES SECTION =====================
 function getMarketingTemplates() {
   let tpls = DB.get('marketingTemplates');
-  if (!Array.isArray(tpls) || tpls.length === 0) {
+  let needsClean = false;
+
+  if (Array.isArray(tpls) && tpls.length > 0) {
+    tpls.forEach(t => {
+      if (t.message && (t.message.includes('❤️') || t.message.includes('–') || t.message.includes('🏥'))) {
+        t.message = t.message.replace(/❤️/g, '').replace(/–/g, '-').replace(/🏥/g, '').replace(/\s+/g, ' ').trim();
+        needsClean = true;
+      }
+    });
+    if (needsClean) {
+      DB.set('marketingTemplates', tpls);
+    }
+  } else {
     tpls = [
       {
         id: 'tpl1',
         title: 'General Greeting',
-        message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure'
+        message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure'
       },
       {
         id: 'tpl2',
         title: 'Health & Wellness Checkup',
-        message: 'Hello {customerName}, we hope you are doing well. Care N Cure is always here for your healthcare & medicine needs. Stay healthy! ❤️'
+        message: 'Hello {customerName}, we hope you are doing well. Care N Cure is always here for your healthcare and medicine needs. Stay healthy!'
       },
       {
         id: 'tpl3',
         title: 'Special Discount Offer',
-        message: 'Hello {customerName}, special health discounts are live at Care N Cure today! Visit us or call for fast delivery. 🏥 – Care N Cure'
+        message: 'Hello {customerName}, special health discounts are live at Care N Cure today! Visit us or call for fast delivery. Care N Cure'
       }
     ];
     DB.set('marketingTemplates', tpls);
@@ -1416,7 +1428,7 @@ function getActiveMarketingTemplate() {
   const tpls = getMarketingTemplates();
   const activeId = getActiveMarketingTemplateId();
   const active = tpls.find(t => t.id === activeId);
-  return active || tpls[0] || { id: 'default', title: 'Default Offer', message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure' };
+  return active || tpls[0] || { id: 'default', title: 'Default Offer', message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure' };
 }
 
 function renderMessages() {
@@ -1540,7 +1552,7 @@ function openWhatsAppReminder(customerId, medicineId, finishDate) {
   const customer = DB.get('customers').find(c => c.id === customerId);
   if (!customer) return;
 
-  const defaultMessage = `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️ – Care N Cure`;
+  const defaultMessage = `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
 
   currentWhatsAppReminder = { customerId, medicineId, finishDate };
 
@@ -1560,7 +1572,7 @@ function sendWhatsAppReminder() {
   if (!customer) return;
 
   const msgInput = document.getElementById('whatsappMessageText');
-  const message = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! ❤️`;
+  const message = (msgInput && msgInput.value.trim()) ? msgInput.value.trim() : `Hello ${customer.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
   
   const cleanMobile = customer.mobile.replace(/\D/g, '');
   const phone = cleanMobile.startsWith('91') ? cleanMobile : '91' + cleanMobile;
