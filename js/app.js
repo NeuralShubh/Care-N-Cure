@@ -910,6 +910,69 @@ function autoGenerateReminders() {
   DB.set('reminders', reminders);
 }
 
+function openAddReminderModal() {
+  const form = document.getElementById('addReminderForm');
+  if (form) form.reset();
+
+  const custSel = document.getElementById('addRemCustomer');
+  const custs = DB.get('customers') || [];
+  if (custSel) {
+    custSel.innerHTML = '<option value="">Select Customer</option>' +
+      custs.map(c => `<option value="${c.id}">${c.name} (${c.mobile})</option>`).join('');
+  }
+
+  const medSel = document.getElementById('addRemMedicine');
+  const meds = DB.get('medicines') || [];
+  if (medSel) {
+    medSel.innerHTML = '<option value="">Select Medicine</option>' +
+      meds.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }
+
+  const defaultDate = new Date();
+  defaultDate.setDate(defaultDate.getDate() + 7);
+  const dateInput = document.getElementById('addRemFinishDate');
+  if (dateInput) dateInput.value = defaultDate.toISOString().split('T')[0];
+
+  document.getElementById('addReminderModal').classList.add('active');
+}
+
+function saveNewReminder(e) {
+  e.preventDefault();
+  const custId = document.getElementById('addRemCustomer').value;
+  const medId = document.getElementById('addRemMedicine').value;
+  const finishDate = document.getElementById('addRemFinishDate').value;
+
+  const customers = DB.get('customers') || [];
+  const medicines = DB.get('medicines') || [];
+
+  const customer = customers.find(c => c.id === custId);
+  const med = medicines.find(m => m.id === medId);
+
+  if (!customer || !med) {
+    showToast('Please select valid customer and medicine', 'error');
+    return;
+  }
+
+  let reminders = DB.get('reminders') || [];
+  reminders.push({
+    id: DB.generateId(),
+    customerId: customer.id,
+    customerName: customer.name,
+    customerMobile: customer.mobile,
+    medicineId: med.id,
+    medicineName: med.name,
+    finishDate: finishDate,
+    status: 'pending',
+    createdAt: new Date().toISOString().split('T')[0]
+  });
+
+  DB.set('reminders', reminders);
+  closeModal('addReminderModal');
+  updateBadges();
+  renderReminders();
+  showToast('Reminder added successfully', 'success');
+}
+
 function switchReminderTab(tab) {
   currentReminderTab = tab;
   document.querySelectorAll('#page-reminders .tab').forEach(t => {

@@ -6,7 +6,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=6.0.0">
+  <link rel="stylesheet" href="css/style.css?v=7.0.0">
 </head>
 <body>
 
@@ -230,6 +230,7 @@
               <span class="search-icon">&#128269;</span>
               <input type="text" id="remSearch" placeholder="Search reminders by customer, medicine or mobile..." oninput="renderReminders()">
             </div>
+            <button class="btn btn-primary" onclick="openAddReminderModal()">+ Add Reminder</button>
           </div>
           <div class="tabs">
             <button class="tab active" data-tab="pending" onclick="switchReminderTab('pending')">Pending</button>
@@ -428,7 +429,41 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=6.0.0"></script>
-  <script src="js/app.js?v=6.0.0"></script>
+  <!-- Add Reminder Modal -->
+  <div id="addReminderModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'addReminderModal')">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <h3>Add Reminder</h3>
+        <button class="modal-close" onclick="closeModal('addReminderModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addReminderForm" onsubmit="saveNewReminder(event)">
+          <div class="form-group">
+            <label>Customer <span class="required">*</span></label>
+            <select id="addRemCustomer" class="form-control" required>
+              <option value="">Select Customer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Medicine <span class="required">*</span></label>
+            <select id="addRemMedicine" class="form-control" required>
+              <option value="">Select Medicine</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Finish Date / Reminder Date <span class="required">*</span></label>
+            <input type="date" id="addRemFinishDate" class="form-control" required>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('addReminderModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Reminder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js?v=7.0.0"></script>
+  <script src="js/app.js?v=7.0.0"></script>
 </body>
 </html>
