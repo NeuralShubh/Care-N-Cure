@@ -15,10 +15,12 @@ CREATE TABLE IF NOT EXISTS public.app_state (
 ALTER TABLE public.app_state ENABLE ROW LEVEL SECURITY;
 
 -- Allow anonymous and authenticated read/write access to app_state
+DROP POLICY IF EXISTS "Allow public read access to app_state" ON public.app_state;
 CREATE POLICY "Allow public read access to app_state" 
     ON public.app_state FOR SELECT 
     USING (true);
 
+DROP POLICY IF EXISTS "Allow public insert/update access to app_state" ON public.app_state;
 CREATE POLICY "Allow public insert/update access to app_state" 
     ON public.app_state FOR ALL 
     USING (true) 
@@ -135,9 +137,20 @@ ALTER TABLE public.bills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read/write employees" ON public.employees;
 CREATE POLICY "Allow public read/write employees" ON public.employees FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write medicines" ON public.medicines;
 CREATE POLICY "Allow public read/write medicines" ON public.medicines FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write customers" ON public.customers;
 CREATE POLICY "Allow public read/write customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write bills" ON public.bills;
 CREATE POLICY "Allow public read/write bills" ON public.bills FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write purchases" ON public.purchases;
 CREATE POLICY "Allow public read/write purchases" ON public.purchases FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public read/write reminders" ON public.reminders;
 CREATE POLICY "Allow public read/write reminders" ON public.reminders FOR ALL USING (true) WITH CHECK (true);
