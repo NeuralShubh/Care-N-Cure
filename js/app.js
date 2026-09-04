@@ -800,13 +800,11 @@ function viewCustomerHistory(customerId) {
       <h4 style="margin:0 0 10px 0; font-size:15px; color:var(--text-primary); font-weight:700;">Purchase History</h4>
       <div class="table-container" style="margin-bottom:20px;">
         <table class="data-table">
-          <thead><tr><th>Medicine</th><th>Qty</th><th>Purchase Date</th><th>Finish Date</th></tr></thead>
+          <thead><tr><th>Medicine</th><th>Qty</th></tr></thead>
           <tbody>
             ${purchases.map(p => `<tr>
               <td><strong>${p.medicineName}</strong></td>
               <td>${p.quantity}</td>
-              <td>${formatDate(p.purchaseDate)}</td>
-              <td>${formatDate(p.finishDate)}</td>
             </tr>`).join('')}
           </tbody>
         </table>
