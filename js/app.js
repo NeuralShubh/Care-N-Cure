@@ -890,60 +890,24 @@ function syncCustomerReminders() {
 
   let changed = false;
 
+  // Clean up any legacy auto-generated dummy "Marketing Follow-up" reminders
+  const initialCount = reminders.length;
+  reminders = reminders.filter(r => !(r.medicineName === 'Marketing Follow-up' && !r.isCustomMessage && !r.isUserAdded));
+  if (reminders.length !== initialCount) {
+    changed = true;
+  }
+
   customers.forEach(c => {
-    const custPurchases = purchases.filter(p => p.customerId === c.id);
+    const custPurchases = purchases.filter(p => p.customerId === c.id && p.finishDate);
 
-    if (custPurchases.length > 0) {
-      custPurchases.forEach(p => {
-        const pKey = c.id + '_' + (p.medicineId || p.medicineName);
-        if (deletedKeys.includes(pKey) || deletedKeys.includes(c.id + '_default')) {
-          return;
-        }
-
-        let existing = reminders.find(r => r.customerId === c.id && (r.medicineId === p.medicineId || r.medicineName === p.medicineName));
-        if (!existing) {
-          const defaultDateStr = p.finishDate || (function() {
-            const d = new Date();
-            d.setDate(d.getDate() + 7);
-            return d.toISOString().split('T')[0];
-          })();
-          const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
-
-          reminders.push({
-            id: DB.generateId(),
-            customerId: c.id,
-            customerName: c.name,
-            customerMobile: c.mobile,
-            medicineId: p.medicineId,
-            medicineName: p.medicineName,
-            finishDate: defaultDateStr,
-            customMessage: defaultMsg,
-            isCustomMessage: false,
-            status: 'pending',
-            createdAt: new Date().toISOString().split('T')[0]
-          });
-          changed = true;
-        } else {
-          if (existing.customerName !== c.name || existing.customerMobile !== c.mobile) {
-            existing.customerName = c.name;
-            existing.customerMobile = c.mobile;
-            changed = true;
-          }
-        }
-      });
-    } else {
-      const defKey = c.id + '_default';
-      if (deletedKeys.includes(defKey)) {
+    custPurchases.forEach(p => {
+      const pKey = c.id + '_' + (p.medicineId || p.medicineName);
+      if (deletedKeys.includes(pKey)) {
         return;
       }
 
-      let existing = reminders.find(r => r.customerId === c.id);
+      let existing = reminders.find(r => r.customerId === c.id && (r.medicineId === p.medicineId || r.medicineName === p.medicineName));
       if (!existing) {
-        const defaultDateStr = (function() {
-          const d = new Date();
-          d.setDate(d.getDate() + 7);
-          return d.toISOString().split('T')[0];
-        })();
         const defaultMsg = `Hello ${c.name}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure`;
 
         reminders.push({
@@ -951,9 +915,9 @@ function syncCustomerReminders() {
           customerId: c.id,
           customerName: c.name,
           customerMobile: c.mobile,
-          medicineId: '',
-          medicineName: 'Marketing Follow-up',
-          finishDate: defaultDateStr,
+          medicineId: p.medicineId || '',
+          medicineName: p.medicineName || '',
+          finishDate: p.finishDate,
           customMessage: defaultMsg,
           isCustomMessage: false,
           status: 'pending',
@@ -967,7 +931,7 @@ function syncCustomerReminders() {
           changed = true;
         }
       }
-    }
+    });
   });
 
   if (changed) {
@@ -1054,6 +1018,7 @@ function saveNewReminder(e) {
       finishDate: finishDate,
       customMessage: defaultMsg,
       isCustomMessage: false,
+      isUserAdded: true,
       status: 'pending',
       createdAt: new Date().toISOString().split('T')[0]
     });
