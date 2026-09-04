@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { supabase, isConfigured } = require('./db');
 
 const app = express();
@@ -26,7 +27,7 @@ let memoryState = {
 
 // Middleware
 app.use(cors({
-  origin: FRONTEND_URL === '*' ? '*' : [FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:5500'],
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -148,17 +149,79 @@ app.put('/api/data', async (req, res) => {
 const collections = ['medicines', 'customers', 'bills', 'purchases', 'reminders', 'employees', 'marketingTemplates'];
 
 collections.forEach(col => {
+  // GET all items in collection
   app.get(`/api/${col}`, async (req, res) => {
     const state = await fetchStateFromSupabase();
     res.json(state[col] || []);
   });
 
+  // POST create item in collection
+  app.post(`/api/${col}`, async (req, res) => {
+    try {
+      const state = await fetchStateFromSupabase();
+      if (!state[col]) state[col] = [];
+      const newItem = req.body;
+      if (!newItem.id) {
+        newItem.id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+      }
+      state[col].push(newItem);
+      state.lastUpdated = Date.now();
+      const success = await upsertStateToSupabase(state);
+      res.status(201).json({ success: true, item: newItem, syncedWithSupabase: success });
+    } catch (err) {
+      res.status(500).json({ error: `Failed to create item in ${col}`, details: err.message });
+    }
+  });
+
+  // PUT replace entire collection array
   app.put(`/api/${col}`, async (req, res) => {
-    const state = await fetchStateFromSupabase();
-    state[col] = req.body || [];
-    state.lastUpdated = Date.now();
-    await upsertStateToSupabase(state);
-    res.json({ success: true, count: state[col].length });
+    try {
+      const state = await fetchStateFromSupabase();
+      state[col] = req.body || [];
+      state.lastUpdated = Date.now();
+      const success = await upsertStateToSupabase(state);
+      res.json({ success: true, count: state[col].length, syncedWithSupabase: success });
+    } catch (err) {
+      res.status(500).json({ error: `Failed to replace ${col}`, details: err.message });
+    }
+  });
+
+  // PUT update specific item in collection by ID
+  app.put(`/api/${col}/:id`, async (req, res) => {
+    try {
+      const state = await fetchStateFromSupabase();
+      if (!state[col]) state[col] = [];
+      const itemId = req.params.id;
+      const idx = state[col].findIndex(item => item.id === itemId);
+      if (idx === -1) {
+        return res.status(404).json({ error: `Item ${itemId} not found in ${col}` });
+      }
+      state[col][idx] = { ...state[col][idx], ...req.body, id: itemId };
+      state.lastUpdated = Date.now();
+      const success = await upsertStateToSupabase(state);
+      res.json({ success: true, item: state[col][idx], syncedWithSupabase: success });
+    } catch (err) {
+      res.status(500).json({ error: `Failed to update item in ${col}`, details: err.message });
+    }
+  });
+
+  // DELETE item in collection by ID
+  app.delete(`/api/${col}/:id`, async (req, res) => {
+    try {
+      const state = await fetchStateFromSupabase();
+      if (!state[col]) state[col] = [];
+      const itemId = req.params.id;
+      const initialLen = state[col].length;
+      state[col] = state[col].filter(item => item.id !== itemId);
+      if (state[col].length === initialLen) {
+        return res.status(404).json({ error: `Item ${itemId} not found in ${col}` });
+      }
+      state.lastUpdated = Date.now();
+      const success = await upsertStateToSupabase(state);
+      res.json({ success: true, deletedId: itemId, syncedWithSupabase: success });
+    } catch (err) {
+      res.status(500).json({ error: `Failed to delete item from ${col}`, details: err.message });
+    }
   });
 });
 

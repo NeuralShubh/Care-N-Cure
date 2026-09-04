@@ -9,12 +9,18 @@ let lastCloudSyncTimestamp = 0;
 
 const DB = {
   get(key) {
-    try { return JSON.parse(localStorage.getItem(`cnc_${key}`)) || []; }
-    catch { return []; }
+    try {
+      const val = JSON.parse(localStorage.getItem(`cnc_${key}`));
+      return Array.isArray(val) ? val : (val || []);
+    } catch {
+      return [];
+    }
   },
   set(key, data) {
-    localStorage.setItem(`cnc_${key}`, JSON.stringify(data));
-    localStorage.setItem('cnc_last_updated', Date.now().toString());
+    try {
+      localStorage.setItem(`cnc_${key}`, JSON.stringify(data));
+      localStorage.setItem('cnc_last_updated', Date.now().toString());
+    } catch(e) {}
     DB.broadcastSync();
     DB.pushToCloud();
   },
@@ -23,8 +29,10 @@ const DB = {
     catch { return null; }
   },
   setConfig(key, value) {
-    localStorage.setItem(`cnc_cfg_${key}`, JSON.stringify(value));
-    localStorage.setItem('cnc_last_updated', Date.now().toString());
+    try {
+      localStorage.setItem(`cnc_cfg_${key}`, JSON.stringify(value));
+      localStorage.setItem('cnc_last_updated', Date.now().toString());
+    } catch(e) {}
     DB.broadcastSync();
     DB.pushToCloud();
   },
@@ -100,12 +108,18 @@ const DB = {
       const dataPayload = DB.getAllData();
       const payloadString = JSON.stringify({ name: 'cnc_care_n_cure_shared_live_db', data: dataPayload });
       
-      await fetch(CLOUD_DB_URL, {
+      const res = await fetch(CLOUD_DB_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: payloadString
       });
-      lastCloudSyncTimestamp = dataPayload.lastUpdated;
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.data && json.data.lastUpdated) {
+          localStorage.setItem('cnc_last_updated', json.data.lastUpdated.toString());
+          lastCloudSyncTimestamp = json.data.lastUpdated;
+        }
+      }
     } catch (err) {
       console.warn('Cloud DB push warning:', err);
     } finally {
@@ -117,7 +131,7 @@ const DB = {
     }
   },
   async pullFromCloud() {
-    if (isCloudSyncing || cloudPushTimer) return false;
+    if (isCloudSyncing) return false;
     try {
       const res = await fetch(CLOUD_DB_URL);
       if (!res || !res.ok) return false;
@@ -125,19 +139,11 @@ const DB = {
       if (!result || !result.data) return false;
       
       const cloudData = result.data;
-      const cloudTimestamp = cloudData.lastUpdated || 0;
-      const localTimestamp = parseInt(localStorage.getItem('cnc_last_updated') || '0') || 0;
-      const isInitialized = DB.getConfig('initialized');
-
-      if (cloudTimestamp > localTimestamp || !isInitialized) {
-        if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.customers)) {
-          DB.importAllData(cloudData, true);
-          if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
-          if (typeof updateBadges === 'function') updateBadges();
-          return true;
-        }
-      } else if (localTimestamp > cloudTimestamp && isInitialized) {
-        DB.pushToCloud();
+      if (cloudData && typeof cloudData === 'object') {
+        DB.importAllData(cloudData, true);
+        if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+        if (typeof updateBadges === 'function') updateBadges();
+        return true;
       }
     } catch (err) {
       console.warn('Cloud DB pull warning:', err);
@@ -147,47 +153,27 @@ const DB = {
 };
 
 async function seedData() {
-  // Purge old cached state from browser localStorage once for clean production & user update
-  if (typeof localStorage !== 'undefined' && !localStorage.getItem('cnc_v37_arshad_profile')) {
-    localStorage.clear();
-    localStorage.setItem('cnc_v37_arshad_profile', 'true');
-  }
-
-  // Attempt to pull live shared database from Cloud
-  const pulled = await DB.pullFromCloud();
-  
   const defaultEmps = [
     { id: 'emp1', name: 'Arshad Tamboli', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
   ];
 
-  if (!pulled || !DB.getConfig('initialized')) {
-    DB.set('employees', defaultEmps);
-    DB.set('medicines', []);
-    DB.set('customers', []);
-    DB.set('bills', []);
-    DB.set('purchases', []);
-    DB.set('reminders', []);
-    DB.set('customCategories', []);
-    DB.set('marketingTemplates', []);
-    DB.setConfig('initialized', true);
-    DB.setConfig('billCounter', 1);
+  // Fetch live shared database from Supabase Render backend
+  await DB.pullFromCloud();
 
-    // Push clean state to Render backend and Supabase
-    DB.pushToCloud();
-  } else {
-    const existingEmployees = DB.get('employees');
-    if (!Array.isArray(existingEmployees) || existingEmployees.length === 0) {
-      DB.set('employees', defaultEmps);
-    }
+  const existingEmployees = DB.get('employees');
+  if (!Array.isArray(existingEmployees) || existingEmployees.length === 0) {
+    DB.set('employees', defaultEmps);
   }
+
+  DB.setConfig('initialized', true);
 }
 
 seedData();
 
-// Start background Cloud DB Poll loop (every 3 seconds)
+// Start background Cloud DB Poll loop (every 5 seconds)
 setInterval(function() {
   DB.pullFromCloud();
-}, 3000);
+}, 5000);
 
 window.addEventListener('focus', function() {
   DB.pullFromCloud();
