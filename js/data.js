@@ -5,6 +5,7 @@ const DB = {
   },
   set(key, data) {
     localStorage.setItem(`cnc_${key}`, JSON.stringify(data));
+    DB.broadcastSync();
   },
   getConfig(key) {
     try { return JSON.parse(localStorage.getItem(`cnc_cfg_${key}`)); }
@@ -12,9 +13,53 @@ const DB = {
   },
   setConfig(key, value) {
     localStorage.setItem(`cnc_cfg_${key}`, JSON.stringify(value));
+    DB.broadcastSync();
   },
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  },
+  getAllData() {
+    return {
+      employees: DB.get('employees'),
+      medicines: DB.get('medicines'),
+      customers: DB.get('customers'),
+      bills: DB.get('bills'),
+      purchases: DB.get('purchases'),
+      reminders: DB.get('reminders'),
+      customCategories: DB.get('customCategories'),
+      marketingTemplates: DB.get('marketingTemplates'),
+      config: {
+        billCounter: DB.getConfig('billCounter') || 1,
+        initialized: true
+      },
+      exportedAt: new Date().toISOString()
+    };
+  },
+  importAllData(fullObj) {
+    if (!fullObj || typeof fullObj !== 'object') return false;
+    if (Array.isArray(fullObj.employees)) DB.set('employees', fullObj.employees);
+    if (Array.isArray(fullObj.medicines)) DB.set('medicines', fullObj.medicines);
+    if (Array.isArray(fullObj.customers)) DB.set('customers', fullObj.customers);
+    if (Array.isArray(fullObj.bills)) DB.set('bills', fullObj.bills);
+    if (Array.isArray(fullObj.purchases)) DB.set('purchases', fullObj.purchases);
+    if (Array.isArray(fullObj.reminders)) DB.set('reminders', fullObj.reminders);
+    if (Array.isArray(fullObj.customCategories)) DB.set('customCategories', fullObj.customCategories);
+    if (Array.isArray(fullObj.marketingTemplates)) DB.set('marketingTemplates', fullObj.marketingTemplates);
+    if (fullObj.config) {
+      if (fullObj.config.billCounter) DB.setConfig('billCounter', fullObj.config.billCounter);
+      DB.setConfig('initialized', true);
+    }
+    DB.setConfig('initialized', true);
+    DB.broadcastSync();
+    return true;
+  },
+  broadcastSync() {
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('cnc_db_channel');
+        bc.postMessage({ type: 'DB_UPDATED', timestamp: Date.now() });
+      }
+    } catch(e) {}
   }
 };
 
