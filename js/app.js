@@ -244,10 +244,11 @@ function renderMedicines() {
 function getCategories() {
   const defaultCats = ['Analgesic', 'Antibiotic', 'Antihistamine', 'Antidiabetic', 'Antacid', 'Cardiovascular', 'Vitamin', 'Other'];
   const customCats = DB.get('customCategories') || [];
+  const deletedCats = DB.get('deletedCategories') || [];
   const medicines = DB.get('medicines') || [];
   const medCats = medicines.map(m => m.category).filter(Boolean);
   const set = new Set([...defaultCats, ...customCats, ...medCats]);
-  return Array.from(set).sort();
+  return Array.from(set).filter(c => !deletedCats.includes(c)).sort();
 }
 
 function populateMedCategoryFilter() {
@@ -319,6 +320,12 @@ function deleteCategory(catName) {
     customCats = customCats.filter(c => c !== catName);
     DB.set('customCategories', customCats);
 
+    let deletedCats = DB.get('deletedCategories') || [];
+    if (!deletedCats.includes(catName)) {
+      deletedCats.push(catName);
+      DB.set('deletedCategories', deletedCats);
+    }
+
     let medicines = DB.get('medicines') || [];
     let updated = false;
     medicines.forEach(m => {
@@ -343,6 +350,12 @@ function addNewCategory() {
   if (!newCat) {
     showToast('Please enter a category name', 'error');
     return;
+  }
+
+  let deletedCats = DB.get('deletedCategories') || [];
+  if (deletedCats.includes(newCat)) {
+    deletedCats = deletedCats.filter(c => c !== newCat);
+    DB.set('deletedCategories', deletedCats);
   }
 
   let customCats = DB.get('customCategories') || [];

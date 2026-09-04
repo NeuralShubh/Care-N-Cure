@@ -64,6 +64,7 @@ const DB = {
       reminders: DB.get('reminders'),
       deletedReminders: DB.get('deletedReminders'),
       customCategories: DB.get('customCategories'),
+      deletedCategories: DB.get('deletedCategories'),
       marketingTemplates: DB.get('marketingTemplates'),
       config: {
         billCounter: DB.getConfig('billCounter') || 1,
@@ -106,6 +107,7 @@ const DB = {
     if (Array.isArray(fullObj.reminders)) localStorage.setItem('cnc_reminders', JSON.stringify(fullObj.reminders));
     if (Array.isArray(fullObj.deletedReminders)) localStorage.setItem('cnc_deletedReminders', JSON.stringify(fullObj.deletedReminders));
     if (Array.isArray(fullObj.customCategories)) localStorage.setItem('cnc_customCategories', JSON.stringify(fullObj.customCategories));
+    if (Array.isArray(fullObj.deletedCategories)) localStorage.setItem('cnc_deletedCategories', JSON.stringify(fullObj.deletedCategories));
     if (Array.isArray(fullObj.marketingTemplates)) localStorage.setItem('cnc_marketingTemplates', JSON.stringify(fullObj.marketingTemplates));
     if (fullObj.config) {
       if (fullObj.config.billCounter) localStorage.setItem('cnc_cfg_billCounter', JSON.stringify(fullObj.config.billCounter));
