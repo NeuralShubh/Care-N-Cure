@@ -1703,3 +1703,15 @@ textarea.form-control {
   display: block;
 }
 
+/* Responsive Mobile Layout */
+@media (max-width: 768px) {
+  .menu-toggle { display: flex !important; }
+  .sidebar { transform: translateX(-100%); width: 260px; transition: transform 0.3s ease; }
+  .sidebar.active { transform: translateX(0); box-shadow: 0 0 25px rgba(0,0,0,0.5); }
+  .main-content { margin-left: 0 !important; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .search-box { max-width: 100%; }
+}
+

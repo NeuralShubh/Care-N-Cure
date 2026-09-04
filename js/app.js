@@ -1640,6 +1640,68 @@ function showConfirm(title, message, callback) {
   };
 }
 
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('active');
+  }
+}
+
+function autoGenerateReminders() {
+  const purchases = DB.get('purchases') || [];
+  const reminders = DB.get('reminders') || [];
+  const customers = DB.get('customers') || [];
+  let updated = false;
+
+  purchases.forEach(p => {
+    if (p.customerId && p.finishDate) {
+      const exists = reminders.some(r => r.customerId === p.customerId && r.finishDate === p.finishDate && r.medicineName === p.medicineName);
+      if (!exists) {
+        const cust = customers.find(c => c.id === p.customerId);
+        reminders.push({
+          id: DB.generateId(),
+          customerId: p.customerId,
+          customerName: cust ? cust.name : 'Customer',
+          customerMobile: cust ? cust.mobile : '',
+          medicineId: p.medicineId || '',
+          medicineName: p.medicineName || 'Medicine',
+          finishDate: p.finishDate,
+          customMessage: '',
+          isCustomMessage: false,
+          status: 'pending',
+          createdDate: new Date().toISOString().split('T')[0]
+        });
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    DB.set('reminders', reminders);
+  }
+}
+
+function syncCustomerReminders() {
+  const customers = DB.get('customers') || [];
+  const reminders = DB.get('reminders') || [];
+  let updated = false;
+
+  reminders.forEach(r => {
+    const cust = customers.find(c => c.id === r.customerId);
+    if (cust) {
+      if (r.customerName !== cust.name || r.customerMobile !== cust.mobile) {
+        r.customerName = cust.name;
+        r.customerMobile = cust.mobile;
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    DB.set('reminders', reminders);
+  }
+}
+
 // ===================== INIT =====================
 document.addEventListener('DOMContentLoaded', function() {
   const savedUser = DB.getConfig('currentUser');
