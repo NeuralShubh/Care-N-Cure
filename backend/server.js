@@ -9,7 +9,9 @@ const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 
 // In-memory fallback cache if Supabase is temporarily unreachable or initial setup
 let memoryState = {
-  employees: [],
+  employees: [
+    { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
+  ],
   medicines: [],
   customers: [],
   bills: [],

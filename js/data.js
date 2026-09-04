@@ -1,8 +1,6 @@
-const CLOUD_DB_ID = 'ff808181a067127101a06b1861120c5f';
 const CLOUD_DB_URL = (typeof window !== 'undefined' && window.CARE_N_CURE_BACKEND_URL) 
   ? window.CARE_N_CURE_BACKEND_URL 
   : `https://care-n-cure.onrender.com/api/data`;
-const FALLBACK_DB_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
 
 let cloudPushTimer = null;
 let isCloudSyncing = false;
@@ -102,23 +100,11 @@ const DB = {
       const dataPayload = DB.getAllData();
       const payloadString = JSON.stringify({ name: 'cnc_care_n_cure_shared_live_db', data: dataPayload });
       
-      let pushSuccess = false;
-      try {
-        const res = await fetch(CLOUD_DB_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: payloadString
-        });
-        if (res.ok) pushSuccess = true;
-      } catch (e) {}
-
-      if (!pushSuccess) {
-        await fetch(FALLBACK_DB_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: payloadString
-        });
-      }
+      await fetch(CLOUD_DB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: payloadString
+      });
       lastCloudSyncTimestamp = dataPayload.lastUpdated;
     } catch (err) {
       console.warn('Cloud DB push warning:', err);
@@ -133,14 +119,7 @@ const DB = {
   async pullFromCloud() {
     if (isCloudSyncing || cloudPushTimer) return false;
     try {
-      let res = null;
-      try {
-        res = await fetch(CLOUD_DB_URL);
-      } catch (e) {}
-
-      if (!res || !res.ok) {
-        res = await fetch(FALLBACK_DB_URL);
-      }
+      const res = await fetch(CLOUD_DB_URL);
       if (!res || !res.ok) return false;
       const result = await res.json();
       if (!result || !result.data) return false;
@@ -168,40 +147,39 @@ const DB = {
 };
 
 async function seedData() {
-  // First attempt to pull live shared database from Cloud
-  const pulled = await DB.pullFromCloud();
-  
-  const existingEmployees = DB.get('employees');
-  if (!Array.isArray(existingEmployees) || existingEmployees.length === 0) {
-    const defaultEmps = [
-      { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
-    ];
-    DB.set('employees', defaultEmps);
+  // Purge old cached demo state from browser localStorage once for clean production
+  if (typeof localStorage !== 'undefined' && !localStorage.getItem('cnc_v36_clean_slate')) {
+    localStorage.clear();
+    localStorage.setItem('cnc_v36_clean_slate', 'true');
   }
 
-  if (pulled || DB.getConfig('initialized')) return;
+  // Attempt to pull live shared database from Cloud
+  const pulled = await DB.pullFromCloud();
+  
+  const defaultEmps = [
+    { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
+  ];
 
-  const employees = DB.get('employees');
-  const medicines = [];
-  const customers = [];
-  const bills = [];
-  const purchases = [];
-  const reminders = [];
-  const customCategories = [];
-  const marketingTemplates = [];
+  if (!pulled || !DB.getConfig('initialized')) {
+    DB.set('employees', defaultEmps);
+    DB.set('medicines', []);
+    DB.set('customers', []);
+    DB.set('bills', []);
+    DB.set('purchases', []);
+    DB.set('reminders', []);
+    DB.set('customCategories', []);
+    DB.set('marketingTemplates', []);
+    DB.setConfig('initialized', true);
+    DB.setConfig('billCounter', 1);
 
-  DB.set('employees', employees);
-  DB.set('medicines', medicines);
-  DB.set('customers', customers);
-  DB.set('bills', bills);
-  DB.set('purchases', purchases);
-  DB.set('reminders', reminders);
-  DB.set('customCategories', customCategories);
-  DB.set('marketingTemplates', marketingTemplates);
-  DB.setConfig('initialized', true);
-  DB.setConfig('billCounter', 1);
-
-  DB.pushToCloud();
+    // Push clean state to Render backend and Supabase
+    DB.pushToCloud();
+  } else {
+    const existingEmployees = DB.get('employees');
+    if (!Array.isArray(existingEmployees) || existingEmployees.length === 0) {
+      DB.set('employees', defaultEmps);
+    }
+  }
 }
 
 seedData();
@@ -214,4 +192,3 @@ setInterval(function() {
 window.addEventListener('focus', function() {
   DB.pullFromCloud();
 });
-
