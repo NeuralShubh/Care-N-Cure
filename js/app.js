@@ -7,16 +7,9 @@ let currentWhatsAppReminder = null;
 
 function handleLoginSubmit(e) {
   if (e) e.preventDefault();
-  const userSelect = document.getElementById('loginUser');
   const passInput = document.getElementById('loginPassword');
-
-  const userId = userSelect ? userSelect.value : '';
   const password = passInput ? passInput.value : '';
 
-  if (!userId) {
-    showToast('Please select a user', 'error');
-    return false;
-  }
   if (password !== 'admin123') {
     showToast('Invalid password. Default is admin123', 'error');
     return false;
@@ -25,12 +18,12 @@ function handleLoginSubmit(e) {
   let users = DB.get('employees');
   if (!Array.isArray(users) || users.length === 0) {
     users = [
-      { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
+      { id: 'emp1', name: 'Arshad Tamboli', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
     ];
     DB.set('employees', users);
   }
 
-  const user = users.find(u => u.id === userId) || users[0];
+  const user = users[0] || { id: 'emp1', name: 'Arshad Tamboli', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true };
   currentUser = user;
   DB.setConfig('currentUser', user);
 
@@ -51,15 +44,9 @@ function initLogin() {
   let users = DB.get('employees');
   if (!Array.isArray(users) || users.length === 0) {
     users = [
-      { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
+      { id: 'emp1', name: 'Arshad Tamboli', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
     ];
     DB.set('employees', users);
-  }
-
-  const sel = document.getElementById('loginUser');
-  if (sel && sel.options.length <= 1) {
-    sel.innerHTML = '<option value="">-- Select User --</option>' +
-      users.map(u => `<option value="${u.id}">${u.name} (${u.designation})</option>`).join('');
   }
 }
 
@@ -70,7 +57,6 @@ function logout() {
     document.getElementById('appLayout').style.display = 'none';
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('loginPassword').value = '';
-    document.getElementById('loginUser').value = '';
     initLogin();
   });
 }
@@ -116,13 +102,17 @@ function refreshCurrentPage() {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('active');
+  const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
+  if (sidebar) sidebar.classList.toggle('active');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (overlay) overlay.classList.toggle('active');
 }
 
 function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('active');
+  const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
+  if (sidebar) sidebar.classList.remove('active');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (overlay) overlay.classList.remove('active');
 }
 
 // ===================== INIT =====================

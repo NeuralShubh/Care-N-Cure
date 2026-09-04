@@ -147,17 +147,17 @@ const DB = {
 };
 
 async function seedData() {
-  // Purge old cached demo state from browser localStorage once for clean production
-  if (typeof localStorage !== 'undefined' && !localStorage.getItem('cnc_v36_clean_slate')) {
+  // Purge old cached state from browser localStorage once for clean production & user update
+  if (typeof localStorage !== 'undefined' && !localStorage.getItem('cnc_v37_arshad_profile')) {
     localStorage.clear();
-    localStorage.setItem('cnc_v36_clean_slate', 'true');
+    localStorage.setItem('cnc_v37_arshad_profile', 'true');
   }
 
   // Attempt to pull live shared database from Cloud
   const pulled = await DB.pullFromCloud();
   
   const defaultEmps = [
-    { id: 'emp1', name: 'Owner / Admin', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
+    { id: 'emp1', name: 'Arshad Tamboli', mobile: '', address: '', designation: 'Owner', joiningDate: new Date().toISOString().split('T')[0], salary: 0, isOwner: true }
   ];
 
   if (!pulled || !DB.getConfig('initialized')) {

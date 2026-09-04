@@ -31,7 +31,7 @@ INSERT INTO public.app_state (id, data, last_updated, updated_at)
 VALUES (
     'primary_state',
     '{
-        "employees": [{"id": "emp1", "name": "Owner / Admin", "mobile": "", "address": "", "designation": "Owner", "joiningDate": "2026-01-01", "salary": 0, "isOwner": true}],
+        "employees": [{"id": "emp1", "name": "Arshad Tamboli", "mobile": "", "address": "", "designation": "Owner", "joiningDate": "2026-01-01", "salary": 0, "isOwner": true}],
         "medicines": [],
         "customers": [],
         "bills": [],
