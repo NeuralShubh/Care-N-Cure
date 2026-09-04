@@ -76,6 +76,92 @@ async function fetchStateFromSupabase() {
   return memoryState;
 }
 
+// Helper function to sync payload arrays into relational Supabase tables (public.customers, public.medicines, etc.)
+async function syncRelationalTablesToSupabase(payload) {
+  if (!isConfigured() || !payload || typeof payload !== 'object') return;
+
+  try {
+    // 1. Sync public.customers
+    if (Array.isArray(payload.customers)) {
+      if (payload.customers.length > 0) {
+        const customerRows = payload.customers.map(c => ({
+          id: String(c.id),
+          name: c.name || 'Unnamed',
+          mobile: c.mobile || '',
+          address: c.address || ''
+        }));
+        await supabase.from('customers').upsert(customerRows);
+
+        const activeIds = payload.customers.map(c => String(c.id));
+        const { data: dbCusts } = await supabase.from('customers').select('id');
+        if (dbCusts) {
+          const toDelete = dbCusts.filter(row => !activeIds.includes(row.id)).map(row => row.id);
+          if (toDelete.length > 0) {
+            await supabase.from('customers').delete().in('id', toDelete);
+          }
+        }
+      } else {
+        await supabase.from('customers').delete().neq('id', '___none___');
+      }
+    }
+
+    // 2. Sync public.medicines
+    if (Array.isArray(payload.medicines)) {
+      if (payload.medicines.length > 0) {
+        const medicineRows = payload.medicines.map(m => ({
+          id: String(m.id),
+          name: m.name || '',
+          company: m.company || '',
+          category: m.category || '',
+          price: parseFloat(m.price) || 0,
+          quantity: parseInt(m.quantity) || 0,
+          expiry_date: m.expiryDate || null,
+          low_stock_threshold: parseInt(m.minStock || m.lowStockThreshold) || 10
+        }));
+        await supabase.from('medicines').upsert(medicineRows);
+
+        const activeIds = payload.medicines.map(m => String(m.id));
+        const { data: dbMeds } = await supabase.from('medicines').select('id');
+        if (dbMeds) {
+          const toDelete = dbMeds.filter(row => !activeIds.includes(row.id)).map(row => row.id);
+          if (toDelete.length > 0) {
+            await supabase.from('medicines').delete().in('id', toDelete);
+          }
+        }
+      } else {
+        await supabase.from('medicines').delete().neq('id', '___none___');
+      }
+    }
+
+    // 3. Sync public.employees
+    if (Array.isArray(payload.employees)) {
+      if (payload.employees.length > 0) {
+        const employeeRows = payload.employees.map(e => ({
+          id: String(e.id),
+          name: e.name || '',
+          mobile: e.mobile || '',
+          address: e.address || '',
+          designation: e.designation || 'Staff',
+          salary: parseFloat(e.salary) || 0,
+          is_owner: !!e.isOwner
+        }));
+        await supabase.from('employees').upsert(employeeRows);
+
+        const activeIds = payload.employees.map(e => String(e.id));
+        const { data: dbEmps } = await supabase.from('employees').select('id');
+        if (dbEmps) {
+          const toDelete = dbEmps.filter(row => !activeIds.includes(row.id)).map(row => row.id);
+          if (toDelete.length > 0) {
+            await supabase.from('employees').delete().in('id', toDelete);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Relational tables sync warning:', err.message);
+  }
+}
+
 // Helper function to upsert state to Supabase
 async function upsertStateToSupabase(payload) {
   memoryState = payload;
@@ -93,9 +179,12 @@ async function upsertStateToSupabase(payload) {
       });
 
     if (error) {
-      console.error('Supabase upsert error:', error.message);
-      return false;
+      console.error('Supabase app_state upsert error:', error.message);
     }
+
+    // Sync relational tables (public.customers, public.medicines, public.employees)
+    await syncRelationalTablesToSupabase(payload);
+
     return true;
   } catch (err) {
     console.error('Supabase upsert exception:', err.message);
