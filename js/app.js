@@ -103,17 +103,38 @@ function refreshCurrentPage() {
 
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
-  if (sidebar) sidebar.classList.toggle('active');
   const overlay = document.getElementById('sidebarOverlay');
-  if (overlay) overlay.classList.toggle('active');
+  if (sidebar) {
+    const isActive = sidebar.classList.toggle('active');
+    sidebar.classList.toggle('open', isActive);
+    if (overlay) {
+      overlay.classList.toggle('active', isActive);
+      overlay.classList.toggle('open', isActive);
+    }
+  }
 }
 
 function closeSidebar() {
   const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
-  if (sidebar) sidebar.classList.remove('active');
   const overlay = document.getElementById('sidebarOverlay');
-  if (overlay) overlay.classList.remove('active');
+  if (sidebar) {
+    sidebar.classList.remove('active', 'open');
+  }
+  if (overlay) {
+    overlay.classList.remove('active', 'open');
+  }
 }
+
+// Close mobile sidebar when tapping outside (overlay / main content)
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
+  const menuToggle = document.querySelector('.menu-toggle') || document.getElementById('menuToggle');
+  if (sidebar && (sidebar.classList.contains('active') || sidebar.classList.contains('open'))) {
+    if (!sidebar.contains(e.target) && (!menuToggle || !menuToggle.contains(e.target))) {
+      closeSidebar();
+    }
+  }
+});
 
 // ===================== INIT =====================
 function initApp() {
@@ -1630,12 +1651,6 @@ function showConfirm(title, message, callback) {
   };
 }
 
-function toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  if (sidebar) {
-    sidebar.classList.toggle('active');
-  }
-}
 
 function autoGenerateReminders() {
   const purchases = DB.get('purchases') || [];

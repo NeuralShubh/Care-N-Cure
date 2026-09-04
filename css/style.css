@@ -1211,11 +1211,11 @@ textarea.form-control {
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
   }
 
-  .sidebar.open {
+  .sidebar.open, .sidebar.active {
     transform: translateX(0);
   }
 
-  .sidebar-overlay.active {
+  .sidebar-overlay.active, .sidebar-overlay.open {
     display: block;
     opacity: 1;
   }
