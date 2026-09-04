@@ -868,6 +868,7 @@ function syncCustomerReminders() {
   const customers = DB.get('customers') || [];
   const purchases = DB.get('purchases') || [];
   let reminders = DB.get('reminders') || [];
+  const deletedKeys = DB.get('deletedReminders') || [];
 
   let changed = false;
 
@@ -876,6 +877,11 @@ function syncCustomerReminders() {
 
     if (custPurchases.length > 0) {
       custPurchases.forEach(p => {
+        const pKey = c.id + '_' + (p.medicineId || p.medicineName);
+        if (deletedKeys.includes(pKey) || deletedKeys.includes(c.id + '_default')) {
+          return;
+        }
+
         let existing = reminders.find(r => r.customerId === c.id && (r.medicineId === p.medicineId || r.medicineName === p.medicineName));
         if (!existing) {
           const defaultDateStr = p.finishDate || (function() {
@@ -908,6 +914,11 @@ function syncCustomerReminders() {
         }
       });
     } else {
+      const defKey = c.id + '_default';
+      if (deletedKeys.includes(defKey)) {
+        return;
+      }
+
       let existing = reminders.find(r => r.customerId === c.id);
       if (!existing) {
         const defaultDateStr = (function() {
@@ -1174,6 +1185,17 @@ function deleteReminder(id, e) {
   if (e) e.stopPropagation();
   showConfirm('Delete Follow-up', 'Are you sure you want to delete this marketing follow-up?', function() {
     let reminders = DB.get('reminders') || [];
+    const rem = reminders.find(r => r.id === id);
+    if (rem) {
+      let deletedKeys = DB.get('deletedReminders') || [];
+      const key1 = rem.customerId + '_' + (rem.medicineId || rem.medicineName);
+      const key2 = rem.customerId + '_default';
+      const key3 = rem.id;
+      if (!deletedKeys.includes(key1)) deletedKeys.push(key1);
+      if (!deletedKeys.includes(key2)) deletedKeys.push(key2);
+      if (!deletedKeys.includes(key3)) deletedKeys.push(key3);
+      DB.set('deletedReminders', deletedKeys);
+    }
     reminders = reminders.filter(r => r.id !== id);
     DB.set('reminders', reminders);
     showToast('Follow-up deleted successfully', 'success');

@@ -1,7 +1,9 @@
 const CLOUD_DB_ID = 'ff808181a067127101a06b1861120c5f';
 const CLOUD_DB_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
 
+let cloudPushTimer = null;
 let isCloudSyncing = false;
+let hasPendingCloudPush = false;
 let lastCloudSyncTimestamp = 0;
 
 const DB = {
@@ -36,10 +38,12 @@ const DB = {
       bills: DB.get('bills'),
       purchases: DB.get('purchases'),
       reminders: DB.get('reminders'),
+      deletedReminders: DB.get('deletedReminders'),
       customCategories: DB.get('customCategories'),
       marketingTemplates: DB.get('marketingTemplates'),
       config: {
         billCounter: DB.getConfig('billCounter') || 1,
+        activeMarketingTemplateId: DB.getConfig('activeMarketingTemplateId') || '',
         initialized: true
       },
       lastUpdated: parseInt(localStorage.getItem('cnc_last_updated') || '0') || Date.now()
@@ -53,10 +57,12 @@ const DB = {
     if (Array.isArray(fullObj.bills)) localStorage.setItem('cnc_bills', JSON.stringify(fullObj.bills));
     if (Array.isArray(fullObj.purchases)) localStorage.setItem('cnc_purchases', JSON.stringify(fullObj.purchases));
     if (Array.isArray(fullObj.reminders)) localStorage.setItem('cnc_reminders', JSON.stringify(fullObj.reminders));
+    if (Array.isArray(fullObj.deletedReminders)) localStorage.setItem('cnc_deletedReminders', JSON.stringify(fullObj.deletedReminders));
     if (Array.isArray(fullObj.customCategories)) localStorage.setItem('cnc_customCategories', JSON.stringify(fullObj.customCategories));
     if (Array.isArray(fullObj.marketingTemplates)) localStorage.setItem('cnc_marketingTemplates', JSON.stringify(fullObj.marketingTemplates));
     if (fullObj.config) {
       if (fullObj.config.billCounter) localStorage.setItem('cnc_cfg_billCounter', JSON.stringify(fullObj.config.billCounter));
+      if (fullObj.config.activeMarketingTemplateId) localStorage.setItem('cnc_cfg_activeMarketingTemplateId', JSON.stringify(fullObj.config.activeMarketingTemplateId));
       localStorage.setItem('cnc_cfg_initialized', JSON.stringify(true));
     }
     const ts = fullObj.lastUpdated || Date.now();
@@ -74,8 +80,20 @@ const DB = {
       }
     } catch(e) {}
   },
-  async pushToCloud() {
-    if (isCloudSyncing) return;
+  pushToCloud() {
+    if (cloudPushTimer) {
+      clearTimeout(cloudPushTimer);
+    }
+    cloudPushTimer = setTimeout(() => {
+      cloudPushTimer = null;
+      DB.executeCloudPush();
+    }, 300);
+  },
+  async executeCloudPush() {
+    if (isCloudSyncing) {
+      hasPendingCloudPush = true;
+      return;
+    }
     try {
       isCloudSyncing = true;
       const dataPayload = DB.getAllData();
@@ -89,9 +107,14 @@ const DB = {
       console.warn('Cloud DB push warning:', err);
     } finally {
       isCloudSyncing = false;
+      if (hasPendingCloudPush) {
+        hasPendingCloudPush = false;
+        DB.pushToCloud();
+      }
     }
   },
   async pullFromCloud() {
+    if (isCloudSyncing || cloudPushTimer) return false;
     try {
       const res = await fetch(CLOUD_DB_URL);
       if (!res.ok) return false;
@@ -101,18 +124,16 @@ const DB = {
       const cloudData = result.data;
       const cloudTimestamp = cloudData.lastUpdated || 0;
       const localTimestamp = parseInt(localStorage.getItem('cnc_last_updated') || '0') || 0;
+      const isInitialized = DB.getConfig('initialized');
 
-      const localCustomers = DB.get('customers');
-      const isLocalEmpty = !Array.isArray(localCustomers) || localCustomers.length === 0;
-
-      if (cloudTimestamp > localTimestamp || isLocalEmpty) {
-        if (cloudData.customers && Array.isArray(cloudData.customers)) {
+      if (cloudTimestamp > localTimestamp || !isInitialized) {
+        if (cloudData && typeof cloudData === 'object' && Array.isArray(cloudData.customers)) {
           DB.importAllData(cloudData, true);
           if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
           if (typeof updateBadges === 'function') updateBadges();
           return true;
         }
-      } else if (localTimestamp > cloudTimestamp && !isLocalEmpty) {
+      } else if (localTimestamp > cloudTimestamp && isInitialized) {
         DB.pushToCloud();
       }
     } catch (err) {
