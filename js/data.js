@@ -1,3 +1,9 @@
+const CLOUD_DB_ID = 'ff808181a067127101a06b1861120c5f';
+const CLOUD_DB_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
+
+let isCloudSyncing = false;
+let lastCloudSyncTimestamp = 0;
+
 const DB = {
   get(key) {
     try { return JSON.parse(localStorage.getItem(`cnc_${key}`)) || []; }
@@ -5,7 +11,9 @@ const DB = {
   },
   set(key, data) {
     localStorage.setItem(`cnc_${key}`, JSON.stringify(data));
+    localStorage.setItem('cnc_last_updated', Date.now().toString());
     DB.broadcastSync();
+    DB.pushToCloud();
   },
   getConfig(key) {
     try { return JSON.parse(localStorage.getItem(`cnc_cfg_${key}`)); }
@@ -13,7 +21,9 @@ const DB = {
   },
   setConfig(key, value) {
     localStorage.setItem(`cnc_cfg_${key}`, JSON.stringify(value));
+    localStorage.setItem('cnc_last_updated', Date.now().toString());
     DB.broadcastSync();
+    DB.pushToCloud();
   },
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -32,25 +42,28 @@ const DB = {
         billCounter: DB.getConfig('billCounter') || 1,
         initialized: true
       },
-      exportedAt: new Date().toISOString()
+      lastUpdated: parseInt(localStorage.getItem('cnc_last_updated') || '0') || Date.now()
     };
   },
-  importAllData(fullObj) {
+  importAllData(fullObj, skipCloudPush = false) {
     if (!fullObj || typeof fullObj !== 'object') return false;
-    if (Array.isArray(fullObj.employees)) DB.set('employees', fullObj.employees);
-    if (Array.isArray(fullObj.medicines)) DB.set('medicines', fullObj.medicines);
-    if (Array.isArray(fullObj.customers)) DB.set('customers', fullObj.customers);
-    if (Array.isArray(fullObj.bills)) DB.set('bills', fullObj.bills);
-    if (Array.isArray(fullObj.purchases)) DB.set('purchases', fullObj.purchases);
-    if (Array.isArray(fullObj.reminders)) DB.set('reminders', fullObj.reminders);
-    if (Array.isArray(fullObj.customCategories)) DB.set('customCategories', fullObj.customCategories);
-    if (Array.isArray(fullObj.marketingTemplates)) DB.set('marketingTemplates', fullObj.marketingTemplates);
+    if (Array.isArray(fullObj.employees)) localStorage.setItem('cnc_employees', JSON.stringify(fullObj.employees));
+    if (Array.isArray(fullObj.medicines)) localStorage.setItem('cnc_medicines', JSON.stringify(fullObj.medicines));
+    if (Array.isArray(fullObj.customers)) localStorage.setItem('cnc_customers', JSON.stringify(fullObj.customers));
+    if (Array.isArray(fullObj.bills)) localStorage.setItem('cnc_bills', JSON.stringify(fullObj.bills));
+    if (Array.isArray(fullObj.purchases)) localStorage.setItem('cnc_purchases', JSON.stringify(fullObj.purchases));
+    if (Array.isArray(fullObj.reminders)) localStorage.setItem('cnc_reminders', JSON.stringify(fullObj.reminders));
+    if (Array.isArray(fullObj.customCategories)) localStorage.setItem('cnc_customCategories', JSON.stringify(fullObj.customCategories));
+    if (Array.isArray(fullObj.marketingTemplates)) localStorage.setItem('cnc_marketingTemplates', JSON.stringify(fullObj.marketingTemplates));
     if (fullObj.config) {
-      if (fullObj.config.billCounter) DB.setConfig('billCounter', fullObj.config.billCounter);
-      DB.setConfig('initialized', true);
+      if (fullObj.config.billCounter) localStorage.setItem('cnc_cfg_billCounter', JSON.stringify(fullObj.config.billCounter));
+      localStorage.setItem('cnc_cfg_initialized', JSON.stringify(true));
     }
-    DB.setConfig('initialized', true);
+    const ts = fullObj.lastUpdated || Date.now();
+    localStorage.setItem('cnc_last_updated', ts.toString());
+    lastCloudSyncTimestamp = ts;
     DB.broadcastSync();
+    if (!skipCloudPush) DB.pushToCloud();
     return true;
   },
   broadcastSync() {
@@ -60,10 +73,59 @@ const DB = {
         bc.postMessage({ type: 'DB_UPDATED', timestamp: Date.now() });
       }
     } catch(e) {}
+  },
+  async pushToCloud() {
+    if (isCloudSyncing) return;
+    try {
+      isCloudSyncing = true;
+      const dataPayload = DB.getAllData();
+      await fetch(CLOUD_DB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'cnc_care_n_cure_shared_live_db', data: dataPayload })
+      });
+      lastCloudSyncTimestamp = dataPayload.lastUpdated;
+    } catch (err) {
+      console.warn('Cloud DB push warning:', err);
+    } finally {
+      isCloudSyncing = false;
+    }
+  },
+  async pullFromCloud() {
+    try {
+      const res = await fetch(CLOUD_DB_URL);
+      if (!res.ok) return false;
+      const result = await res.json();
+      if (!result || !result.data) return false;
+      
+      const cloudData = result.data;
+      const cloudTimestamp = cloudData.lastUpdated || 0;
+      const localTimestamp = parseInt(localStorage.getItem('cnc_last_updated') || '0') || 0;
+
+      const localCustomers = DB.get('customers');
+      const isLocalEmpty = !Array.isArray(localCustomers) || localCustomers.length === 0;
+
+      if (cloudTimestamp > localTimestamp || isLocalEmpty) {
+        if (cloudData.customers && Array.isArray(cloudData.customers)) {
+          DB.importAllData(cloudData, true);
+          if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
+          if (typeof updateBadges === 'function') updateBadges();
+          return true;
+        }
+      } else if (localTimestamp > cloudTimestamp && !isLocalEmpty) {
+        DB.pushToCloud();
+      }
+    } catch (err) {
+      console.warn('Cloud DB pull warning:', err);
+    }
+    return false;
   }
 };
 
-function seedData() {
+async function seedData() {
+  // First attempt to pull live shared database from Cloud
+  const pulled = await DB.pullFromCloud();
+  
   const existingEmployees = DB.get('employees');
   if (!Array.isArray(existingEmployees) || existingEmployees.length === 0) {
     const defaultEmps = [
@@ -74,7 +136,7 @@ function seedData() {
     DB.set('employees', defaultEmps);
   }
 
-  if (DB.getConfig('initialized')) return;
+  if (pulled || DB.getConfig('initialized')) return;
 
   const employees = DB.get('employees');
 
@@ -138,6 +200,18 @@ function seedData() {
   DB.set('reminders', reminders);
   DB.setConfig('initialized', true);
   DB.setConfig('billCounter', 3);
+
+  DB.pushToCloud();
 }
 
 seedData();
+
+// Start background Cloud DB Poll loop (every 3 seconds)
+setInterval(function() {
+  DB.pullFromCloud();
+}, 3000);
+
+window.addEventListener('focus', function() {
+  DB.pullFromCloud();
+});
+
