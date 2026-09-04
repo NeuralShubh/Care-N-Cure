@@ -1191,6 +1191,7 @@ function deleteReminder(id, e) {
 }
 
 function switchReminderTab(tab) {
+  if (tab === 'completed') tab = 'pending';
   currentReminderTab = tab;
   document.querySelectorAll('#page-marketing .tab, #page-reminders .tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
@@ -1200,6 +1201,7 @@ function switchReminderTab(tab) {
 
 function renderReminders() {
   syncCustomerReminders();
+  if (currentReminderTab === 'completed') currentReminderTab = 'pending';
   const searchInput = document.getElementById('remSearch');
   const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
