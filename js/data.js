@@ -1,5 +1,8 @@
 const CLOUD_DB_ID = 'ff808181a067127101a06b1861120c5f';
-const CLOUD_DB_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
+const CLOUD_DB_URL = (typeof window !== 'undefined' && window.CARE_N_CURE_BACKEND_URL) 
+  ? window.CARE_N_CURE_BACKEND_URL 
+  : `https://care-n-cure-backend.onrender.com/api/data`;
+const FALLBACK_DB_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
 
 let cloudPushTimer = null;
 let isCloudSyncing = false;
@@ -97,11 +100,25 @@ const DB = {
     try {
       isCloudSyncing = true;
       const dataPayload = DB.getAllData();
-      await fetch(CLOUD_DB_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'cnc_care_n_cure_shared_live_db', data: dataPayload })
-      });
+      const payloadString = JSON.stringify({ name: 'cnc_care_n_cure_shared_live_db', data: dataPayload });
+      
+      let pushSuccess = false;
+      try {
+        const res = await fetch(CLOUD_DB_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadString
+        });
+        if (res.ok) pushSuccess = true;
+      } catch (e) {}
+
+      if (!pushSuccess) {
+        await fetch(FALLBACK_DB_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadString
+        });
+      }
       lastCloudSyncTimestamp = dataPayload.lastUpdated;
     } catch (err) {
       console.warn('Cloud DB push warning:', err);
@@ -116,8 +133,15 @@ const DB = {
   async pullFromCloud() {
     if (isCloudSyncing || cloudPushTimer) return false;
     try {
-      const res = await fetch(CLOUD_DB_URL);
-      if (!res.ok) return false;
+      let res = null;
+      try {
+        res = await fetch(CLOUD_DB_URL);
+      } catch (e) {}
+
+      if (!res || !res.ok) {
+        res = await fetch(FALLBACK_DB_URL);
+      }
+      if (!res || !res.ok) return false;
       const result = await res.json();
       if (!result || !result.data) return false;
       
