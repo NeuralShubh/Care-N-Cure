@@ -322,8 +322,10 @@ textarea.form-control {
 }
 
 .sidebar-footer {
-  padding: 16px 20px;
+  padding: 16px 20px 24px;
   border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .sidebar-user {
@@ -1706,8 +1708,18 @@ textarea.form-control {
 /* Responsive Mobile Layout */
 @media (max-width: 768px) {
   .menu-toggle { display: flex !important; }
-  .sidebar { transform: translateX(-100%); width: 260px; transition: transform 0.3s ease; }
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    height: 100vh;
+    height: 100dvh;
+    transition: transform 0.3s ease;
+  }
   .sidebar.active { transform: translateX(0); box-shadow: 0 0 25px rgba(0,0,0,0.5); }
+  .sidebar-footer {
+    padding: 16px 20px calc(28px + env(safe-area-inset-bottom, 0px)) !important;
+    margin-bottom: 8px;
+  }
   .main-content { margin-left: 0 !important; }
   .stats-grid { grid-template-columns: 1fr; }
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
