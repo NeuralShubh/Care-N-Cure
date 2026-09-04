@@ -39,6 +39,21 @@ const DB = {
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
   },
+  generateCustomerId() {
+    const customers = DB.get('customers') || [];
+    let maxNum = 0;
+    customers.forEach(c => {
+      if (c && c.id) {
+        const str = String(c.id);
+        const match = str.match(/^c(\d+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+    });
+    return `c${maxNum + 1}`;
+  },
   getAllData() {
     return {
       employees: DB.get('employees'),
@@ -62,7 +77,30 @@ const DB = {
     if (!fullObj || typeof fullObj !== 'object') return false;
     if (Array.isArray(fullObj.employees)) localStorage.setItem('cnc_employees', JSON.stringify(fullObj.employees));
     if (Array.isArray(fullObj.medicines)) localStorage.setItem('cnc_medicines', JSON.stringify(fullObj.medicines));
-    if (Array.isArray(fullObj.customers)) localStorage.setItem('cnc_customers', JSON.stringify(fullObj.customers));
+    if (Array.isArray(fullObj.customers)) {
+      let maxNum = 0;
+      fullObj.customers.forEach(c => {
+        if (c && c.id && /^c\d+$/i.test(String(c.id))) {
+          const num = parseInt(String(c.id).substring(1), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+      fullObj.customers.forEach(c => {
+        if (c && c.id && !/^c\d+$/i.test(String(c.id))) {
+          maxNum++;
+          const oldId = c.id;
+          const newId = `c${maxNum}`;
+          c.id = newId;
+          if (Array.isArray(fullObj.purchases)) {
+            fullObj.purchases.forEach(p => { if (p.customerId === oldId) p.customerId = newId; });
+          }
+          if (Array.isArray(fullObj.reminders)) {
+            fullObj.reminders.forEach(r => { if (r.customerId === oldId) r.customerId = newId; });
+          }
+        }
+      });
+      localStorage.setItem('cnc_customers', JSON.stringify(fullObj.customers));
+    }
     if (Array.isArray(fullObj.bills)) localStorage.setItem('cnc_bills', JSON.stringify(fullObj.bills));
     if (Array.isArray(fullObj.purchases)) localStorage.setItem('cnc_purchases', JSON.stringify(fullObj.purchases));
     if (Array.isArray(fullObj.reminders)) localStorage.setItem('cnc_reminders', JSON.stringify(fullObj.reminders));

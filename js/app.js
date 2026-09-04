@@ -684,7 +684,7 @@ function saveCustomer(e) {
     if (idx !== -1) customers[idx] = { ...customers[idx], ...custData };
     showToast('Customer updated successfully', 'success');
   } else {
-    customerId = DB.generateId();
+    customerId = DB.generateCustomerId();
     custData.id = customerId;
     customers.push(custData);
     showToast('Customer added successfully', 'success');
