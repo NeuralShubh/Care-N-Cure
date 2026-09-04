@@ -267,7 +267,7 @@ function populateMedCategoryDropdown(selectedVal = '') {
   sel.innerHTML = '<option value="">Select Category</option>' +
     categories.map(c => `<option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>`).join('') +
     '<option value="__add_new__" style="font-weight:600; color:var(--primary);">+ Add New Category...</option>' +
-    '<option value="__delete_cat__" style="font-weight:600; color:var(--danger);">&#128465; Delete Category...</option>';
+    '<option value="__delete_cat__" style="font-weight:600; color:var(--danger);">Delete Category...</option>';
 }
 
 function toggleAddCategoryInput(show) {
@@ -551,7 +551,7 @@ function updateCustMedUI() {
     chipsContainer.innerHTML = selectedList.map(m => `
       <span class="chip">
         ${m.name}
-        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)">&times;</span>
+        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)"><i class="fas fa-xmark"></i></span>
       </span>
     `).join('');
   } else {
@@ -559,7 +559,7 @@ function updateCustMedUI() {
     chipsContainer.innerHTML = firstTwo.map(m => `
       <span class="chip">
         ${m.name}
-        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)">&times;</span>
+        <span class="chip-remove" onclick="removeCustMed('${m.id}', event)"><i class="fas fa-xmark"></i></span>
       </span>
     `).join('') + `<span class="badge badge-primary" style="font-size:12px;">+${count - 2} more (${count} selected)</span>`;
   }
@@ -661,8 +661,6 @@ function renderCustomers() {
     return;
   }
 
-  const waIconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.89 5.83L2.5 21.5l3.82-1.35C7.9 21.32 9.89 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.47 14.38c-.2.57-1.02 1.1-1.63 1.23-.42.09-.97.16-2.82-.6-2.36-.97-3.88-3.37-4-3.53-.12-.16-.97-1.29-.97-2.46 0-1.17.61-1.74.83-1.98.22-.24.48-.3.64-.3s.33 0 .47.01c.15.01.35-.06.55.42.2.48.69 1.68.75 1.8.06.12.1.26.02.42-.08.16-.12.26-.24.4-.12.14-.25.31-.36.42-.12.12-.25.25-.11.49.14.24.63 1.04 1.35 1.68.93.83 1.71 1.09 1.95 1.21.24.12.38.1.52-.06.14-.16.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.14 1.15z"/></svg>`;
-
   table.innerHTML = customers.map(c => {
     return `<tr onclick="viewCustomerHistory('${c.id}')" style="cursor:pointer;" title="Click to view details and actions">
       <td><strong>${c.name}</strong></td>
@@ -670,7 +668,7 @@ function renderCustomers() {
       <td>${c.mobile}</td>
       <td onclick="event.stopPropagation()">
         <button class="whatsapp-link-btn" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat with ${c.name} on WhatsApp">
-          ${waIconSvg}
+          <i class="fab fa-whatsapp"></i>
         </button>
       </td>
     </tr>`;
@@ -814,13 +812,13 @@ function viewCustomerHistory(customerId) {
           + Add Marketing
         </button>
         <button class="btn btn-success btn-sm" onclick="openCustomerWhatsApp('${customer.id}', event)" title="Chat on WhatsApp">
-          &#128172; WhatsApp
+          <i class="fab fa-whatsapp"></i> WhatsApp
         </button>
         <button class="btn btn-outline btn-sm" onclick="closeModal('custHistoryModal'); editCustomer('${customer.id}')" title="Edit Customer">
-          &#9998; Edit
+          <i class="fas fa-pen-to-square"></i> Edit
         </button>
         <button class="btn btn-danger btn-sm" onclick="closeModal('custHistoryModal'); deleteCustomer('${customer.id}')" title="Delete Customer">
-          &#128465; Delete
+          <i class="fas fa-trash-can"></i> Delete
         </button>
       </div>
     </div>
@@ -828,7 +826,7 @@ function viewCustomerHistory(customerId) {
 
   let purchaseTableHtml = '';
   if (purchases.length === 0) {
-    purchaseTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon">&#128196;</div><h4>No purchase history</h4></div>';
+    purchaseTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon"><i class="fas fa-file-invoice"></i></div><h4>No purchase history</h4></div>';
   } else {
     purchaseTableHtml = `
       <h4 style="margin:0 0 10px 0; font-size:15px; color:var(--text-primary); font-weight:700;">Purchase History</h4>
@@ -848,7 +846,7 @@ function viewCustomerHistory(customerId) {
 
   let remTableHtml = '';
   if (rems.length === 0) {
-    remTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon">&#128100;</div><h4>No marketing follow-ups scheduled</h4></div>';
+    remTableHtml = '<div class="empty-state" style="padding:16px;"><div class="empty-icon"><i class="fas fa-user-clock"></i></div><h4>No marketing follow-ups scheduled</h4></div>';
   } else {
     remTableHtml = `
       <h4 style="margin:16px 0 10px 0; font-size:15px; color:var(--text-primary); font-weight:700;">Marketing & Follow-up History</h4>
@@ -860,7 +858,7 @@ function viewCustomerHistory(customerId) {
               <td><strong>${formatDate(r.finishDate)}</strong></td>
               <td><span class="badge badge-${r.status === 'completed' ? 'success' : r.status === 'sent' ? 'info' : 'warning'}">${r.status.toUpperCase()}</span></td>
               <td>
-                <button class="btn btn-sm btn-success" onclick="closeModal('custHistoryModal'); sendWhatsAppReminderDirect('${r.id}')">&#128172; Send</button>
+                <button class="btn btn-sm btn-success" onclick="closeModal('custHistoryModal'); sendWhatsAppReminderDirect('${r.id}')"><i class="fab fa-whatsapp"></i> Send</button>
               </td>
             </tr>`).join('')}
           </tbody>
@@ -953,7 +951,7 @@ function addMarketingDateInput() {
   const defaultDateStr = new Date().toISOString().split('T')[0];
   div.innerHTML = `
     <input type="date" class="form-control marketing-date-picker" value="${defaultDateStr}" required>
-    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" title="Remove Date">&times;</button>
+    <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" title="Remove Date"><i class="fas fa-xmark"></i></button>
   `;
   container.appendChild(div);
 }
@@ -1067,7 +1065,7 @@ function toggleMarketingRow(remId) {
   if (panel) {
     panel.classList.toggle('open');
     if (icon) {
-      icon.innerHTML = panel.classList.contains('open') ? '&#9650;' : '&#9660;';
+      icon.innerHTML = panel.classList.contains('open') ? '<i class="fas fa-chevron-up"></i>' : '<i class="fas fa-chevron-down"></i>';
     }
   }
 }
@@ -1220,7 +1218,7 @@ function renderReminders() {
   if (!container) return;
 
   if (reminders.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128100;</div><h3>No ${currentReminderTab} marketing follow-ups</h3><p>Click "+ Add Marketing Follow-up" button above to add dates for customer follow-up.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-user-clock"></i></div><h3>No ${currentReminderTab} marketing follow-ups</h3><p>Click "+ Add Marketing Follow-up" button above to add dates for customer follow-up.</p></div>`;
     return;
   }
 
@@ -1607,13 +1605,17 @@ function closeModalOnOverlay(e, id) {
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
-  const icons = { success: '&#10003;', error: '&#10007;', warning: '&#9888;' };
+  const icons = {
+    success: '<i class="fas fa-check"></i>',
+    error: '<i class="fas fa-xmark"></i>',
+    warning: '<i class="fas fa-triangle-exclamation"></i>'
+  };
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] || icons.success}</span>
     <span class="toast-message">${message}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+    <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>
   `;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
