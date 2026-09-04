@@ -163,7 +163,7 @@ function renderDashboard() {
     } else {
       dashRem.innerHTML = pendingReminders.slice(0, 5).map(r => `
         <div class="reminder-item">
-          <div class="reminder-icon pending">&#128100;</div>
+          <div class="reminder-icon pending"><i class="fas fa-bullhorn"></i></div>
           <div class="reminder-info">
             <h4>${r.customerName}</h4>
             <p>${r.medicineName || 'Marketing Follow-up'}</p>
@@ -213,17 +213,17 @@ function renderMedicines() {
 
   let alerts = [];
   if (lowStock.length > 0) {
-    alerts.push(`<div class="alert alert-warning">&#9888; ${lowStock.length} medicine${lowStock.length > 1 ? 's' : ''} running low on stock.</div>`);
+    alerts.push(`<div class="alert alert-warning"><i class="fas fa-triangle-exclamation"></i> ${lowStock.length} medicine${lowStock.length > 1 ? 's' : ''} running low on stock.</div>`);
   }
   if (expiring.length > 0) {
-    alerts.push(`<div class="alert alert-danger">&#9200; ${expiring.length} medicine${expiring.length > 1 ? 's' : ''} expiring within 90 days.</div>`);
+    alerts.push(`<div class="alert alert-danger"><i class="fas fa-clock"></i> ${expiring.length} medicine${expiring.length > 1 ? 's' : ''} expiring within 90 days.</div>`);
   }
   alertsDiv.innerHTML = alerts.join('');
   alertsDiv.style.display = alerts.length > 0 ? 'block' : 'none';
 
   const table = document.getElementById('medicineTable');
   if (medicines.length === 0) {
-    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon">&#9764;</div><h3>No medicines found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon"><i class="fas fa-pills"></i></div><h3>No medicines found</h3></td></tr>';
     return;
   }
 
@@ -233,8 +233,8 @@ function renderMedicines() {
       <td><span class="badge badge-neutral">${m.category}</span></td>
       <td>
         <div class="action-btns">
-          <button class="btn-icon btn-edit" onclick="editMedicine('${m.id}')" title="Edit">&#9998;</button>
-          <button class="btn-icon btn-delete" onclick="deleteMedicine('${m.id}')" title="Delete">&#128465;</button>
+          <button class="btn-icon btn-edit" onclick="editMedicine('${m.id}')" title="Edit"><i class="fas fa-pen-to-square"></i></button>
+          <button class="btn-icon btn-delete" onclick="deleteMedicine('${m.id}')" title="Delete"><i class="fas fa-trash-can"></i></button>
         </div>
       </td>
     </tr>`;
@@ -304,7 +304,7 @@ function openDeleteCategoryModal() {
       <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--body-bg); border-radius:6px; border:1px solid var(--border-light);">
         <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${cat}</span>
         <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory('${cat}')" style="padding:4px 10px; font-size:12px;">
-          &#128465; Delete
+          <i class="fas fa-trash-can"></i> Delete
         </button>
       </div>
     `).join('');
@@ -657,7 +657,7 @@ function renderCustomers() {
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon">&#9823;</div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon"><i class="fas fa-users"></i></div><h3>No customers found</h3></td></tr>';
     return;
   }
 
@@ -1250,7 +1250,7 @@ function renderReminders() {
           <!-- Left: Completed Toggle Checkbox & Customer Name / Mobile -->
           <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
             <button class="completed-check-btn ${isChecked ? 'checked' : ''}" onclick="toggleReminderCompleted('${r.id}', event)" title="${isChecked ? 'Mark as Pending' : 'Mark as Completed'}">
-              ${isChecked ? '&#10003;' : ''}
+              ${isChecked ? '<i class="fas fa-check"></i>' : ''}
             </button>
             <div>
               <h4 style="margin:0 0 2px 0; font-size:16px; color:var(--text-primary); font-weight:700;">
@@ -1266,14 +1266,14 @@ function renderReminders() {
           <!-- Right: WhatsApp Icon, Call Icon, Status Badge & Action Toggle -->
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <button class="icon-btn-whatsapp" onclick="sendWhatsAppReminderDirect('${r.id}', event)" title="Send WhatsApp Message">
-              &#128172;
+              <i class="fab fa-whatsapp"></i>
             </button>
             <button class="icon-btn-call" onclick="callCustomer('${r.customerMobile}', event)" title="Call Customer">
-              &#128222;
+              <i class="fas fa-phone"></i>
             </button>
             <span class="badge ${dateBadgeClass}" style="font-size:12px; padding:6px 10px;">${dateBadgeText}</span>
             <button class="btn btn-outline btn-sm" onclick="toggleMarketingRow('${r.id}')" style="padding:5px 10px; font-size:12px;">
-              <span id="toggleIcon_${r.id}">&#9660;</span> Actions
+              <span id="toggleIcon_${r.id}"><i class="fas fa-chevron-down"></i></span> Actions
             </button>
           </div>
         </div>
@@ -1298,10 +1298,10 @@ function renderReminders() {
             </div>
 
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn btn-outline btn-sm" onclick="saveReminderMessage('${r.id}')">&#128190; Save Message</button>
-              <button class="btn btn-success btn-sm" onclick="sendWhatsAppReminderDirect('${r.id}', event)">&#128172; Send WhatsApp</button>
-              <button class="btn btn-outline btn-sm" onclick="viewCustomerDetails('${r.customerId}')">&#128100; Details</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Follow-up">&#128465; Delete</button>
+              <button class="btn btn-outline btn-sm" onclick="saveReminderMessage('${r.id}')"><i class="fas fa-floppy-disk"></i> Save Message</button>
+              <button class="btn btn-success btn-sm" onclick="sendWhatsAppReminderDirect('${r.id}', event)"><i class="fab fa-whatsapp"></i> Send WhatsApp</button>
+              <button class="btn btn-outline btn-sm" onclick="viewCustomerDetails('${r.customerId}')"><i class="fas fa-user"></i> Details</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}', event)" title="Delete Follow-up"><i class="fas fa-trash-can"></i> Delete</button>
             </div>
           </div>
         </div>
@@ -1387,7 +1387,7 @@ function renderMessages() {
   if (tpls.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="grid-column: 1 / -1;">
-        <div class="empty-icon">&#128172;</div>
+        <div class="empty-icon"><i class="fas fa-comment-dots"></i></div>
         <h3>No message templates found</h3>
         <p>Click "+ Add Message Template" to create a new reusable template.</p>
       </div>
@@ -1402,7 +1402,7 @@ function renderMessages() {
         <div class="card-body" style="padding:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
             <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
-            <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template" style="padding:5px 10px; border-radius:6px;">&#128465;</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template" style="padding:5px 10px; border-radius:6px;"><i class="fas fa-trash-can"></i></button>
           </div>
           
           <div style="margin-bottom:14px;">
@@ -1412,7 +1412,7 @@ function renderMessages() {
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             ${isActive ? `
               <span class="badge badge-success" style="padding:6px 12px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:#22c55e; color:#fff;">
-                &#10003; Selected for Marketing
+                <i class="fas fa-check"></i> Selected for Marketing
               </span>
             ` : `
               <button class="btn btn-sm btn-outline" onclick="setActiveMarketingTemplate('${t.id}')" style="font-weight:600; font-size:12px;">
@@ -1420,7 +1420,7 @@ function renderMessages() {
               </button>
             `}
             <button class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="font-weight:600; font-size:12px;">
-              &#128190; Save Template
+              <i class="fas fa-floppy-disk"></i> Save Template
             </button>
           </div>
         </div>

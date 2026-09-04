@@ -9,6 +9,7 @@
   <title>Care N Cure - Medical Shop Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css?v=31.0.0">
 </head>
 <body>
@@ -17,7 +18,7 @@
   <div id="loginPage" class="login-page">
     <div class="login-container">
       <div class="login-logo">
-        <div class="logo-icon">+</div>
+        <div class="logo-icon"><i class="fas fa-notes-medical"></i></div>
         <h1>Care N Cure</h1>
         <p>Medical Shop Management System</p>
       </div>
@@ -34,15 +35,15 @@
     </div>
   </div>
 
-  <!-- Main App -->
+  <!-- App Layout -->
   <div id="appLayout" class="app-layout" style="display:none;">
-    <!-- Sidebar Overlay -->
+    <!-- Sidebar Overlay (Mobile) -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
-        <div class="logo-icon">+</div>
+        <div class="logo-icon"><i class="fas fa-notes-medical"></i></div>
         <div class="logo-text">
           <h2>Care N Cure</h2>
           <span>Medical Shop Management</span>
@@ -51,25 +52,25 @@
       <nav class="sidebar-nav">
         <div class="nav-section">Main</div>
         <a class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
-          <span class="nav-icon">&#9632;</span> Dashboard
+          <span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </a>
 
         <div class="nav-section">Management</div>
         <a class="nav-item" data-page="medicines" onclick="navigateTo('medicines')">
-          <span class="nav-icon">&#9764;</span> Medicines
+          <span class="nav-icon"><i class="fas fa-pills"></i></span> Medicines
           <span id="navMedAlerts" class="nav-badge" style="display:none;"></span>
         </a>
         <a class="nav-item" data-page="customers" onclick="navigateTo('customers')">
-          <span class="nav-icon">&#9823;</span> Customers
+          <span class="nav-icon"><i class="fas fa-users"></i></span> Customers
         </a>
 
         <div class="nav-section">Marketing</div>
         <a class="nav-item" data-page="marketing" onclick="navigateTo('marketing')">
-          <span class="nav-icon">&#128100;</span> Marketing
+          <span class="nav-icon"><i class="fas fa-bullhorn"></i></span> Marketing
           <span id="navRemAlerts" class="nav-badge" style="display:none;"></span>
         </a>
         <a class="nav-item" data-page="messages" onclick="navigateTo('messages')">
-          <span class="nav-icon">&#128172;</span> Messages
+          <span class="nav-icon"><i class="fas fa-comment-dots"></i></span> Messages
         </a>
       </nav>
       <div class="sidebar-footer">
@@ -88,7 +89,7 @@
       <!-- Header -->
       <header class="header">
         <div class="header-left">
-          <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+          <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
           <div class="header-title">
             <h1 id="pageTitle">Dashboard</h1>
             <p id="pageSubtitle">Welcome back! Here's your overview.</p>
@@ -96,10 +97,10 @@
         </div>
         <div class="header-right">
           <button class="header-btn" onclick="navigateTo('medicines')" title="Low Stock Alerts">
-            &#9888;<span id="headerStockBadge" class="badge" style="display:none;"></span>
+            <i class="fas fa-triangle-exclamation"></i><span id="headerStockBadge" class="badge" style="display:none;"></span>
           </button>
           <button class="header-btn" onclick="navigateTo('marketing')" title="Marketing Alerts">
-            &#128100;<span id="headerRemBadge" class="badge" style="display:none;"></span>
+            <i class="fas fa-bell"></i><span id="headerRemBadge" class="badge" style="display:none;"></span>
           </button>
         </div>
       </header>
@@ -109,12 +110,12 @@
         <section id="page-dashboard" class="page-section active">
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-icon purple">&#9823;</div>
+              <div class="stat-icon purple"><i class="fas fa-users"></i></div>
               <div class="stat-value" id="statCustomers">0</div>
               <div class="stat-label">Total Customers</div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon green">&#9764;</div>
+              <div class="stat-icon green"><i class="fas fa-pills"></i></div>
               <div class="stat-value" id="statMedicines">0</div>
               <div class="stat-label">Total Medicines</div>
             </div>
@@ -138,13 +139,13 @@
         <section id="page-medicines" class="page-section">
           <div class="toolbar">
             <div class="search-box">
-              <span class="search-icon">&#128269;</span>
+              <span class="search-icon"><i class="fas fa-search"></i></span>
               <input type="text" id="medSearch" placeholder="Search medicines..." oninput="renderMedicines()">
             </div>
             <select class="filter-select" id="medCategoryFilter" onchange="renderMedicines()">
               <option value="">All Categories</option>
             </select>
-            <button class="btn btn-primary" onclick="openMedicineModal()">+ Add Medicine</button>
+            <button class="btn btn-primary" onclick="openMedicineModal()"><i class="fas fa-plus"></i> Add Medicine</button>
           </div>
           <div id="medAlerts" style="display:none;"></div>
           <div class="card">
@@ -167,10 +168,10 @@
         <section id="page-customers" class="page-section">
           <div class="toolbar">
             <div class="search-box">
-              <span class="search-icon">&#128269;</span>
+              <span class="search-icon"><i class="fas fa-search"></i></span>
               <input type="text" id="custSearch" placeholder="Search customers..." oninput="renderCustomers()">
             </div>
-            <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
+            <button class="btn btn-primary" onclick="openCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
           </div>
           <div class="card">
             <div class="card-body no-padding">
@@ -192,10 +193,10 @@
         <section id="page-marketing" class="page-section">
           <div class="toolbar">
             <div class="search-box">
-              <span class="search-icon">&#128269;</span>
+              <span class="search-icon"><i class="fas fa-search"></i></span>
               <input type="text" id="remSearch" placeholder="Search marketing follow-ups by customer or mobile..." oninput="renderReminders()">
             </div>
-            <button class="btn btn-primary" onclick="openAddReminderModal()">+ Add Marketing Follow-up</button>
+            <button class="btn btn-primary" onclick="openAddReminderModal()"><i class="fas fa-plus"></i> Add Marketing Follow-up</button>
           </div>
           <div class="tabs">
             <button class="tab active" data-tab="pending" onclick="switchReminderTab('pending')">Pending</button>
@@ -215,7 +216,7 @@
               <h2 style="font-size:18px; color:var(--text-primary); margin:0;">Marketing Message Templates</h2>
               <p style="font-size:13px; color:var(--text-secondary); margin:4px 0 0 0;">Create, edit and manage reusable marketing message templates.</p>
             </div>
-            <button class="btn btn-primary" onclick="openAddMessageTemplateModal()">+ Add Message Template</button>
+            <button class="btn btn-primary" onclick="openAddMessageTemplateModal()"><i class="fas fa-plus"></i> Add Message Template</button>
           </div>
 
           <div id="marketingTemplatesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
@@ -266,7 +267,7 @@
             </div>
           </div>
           <div class="modal-footer" style="padding:0;border:none;margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-            <button type="button" id="medDeleteBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="deleteCurrentEditMedicine()">&#128465; Delete Medicine</button>
+            <button type="button" id="medDeleteBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="deleteCurrentEditMedicine()"><i class="fas fa-trash-can"></i> Delete Medicine</button>
             <div style="display:flex; gap:12px; margin-left:auto;">
               <button type="button" class="btn btn-outline" onclick="closeModal('medicineModal')">Cancel</button>
               <button type="submit" class="btn btn-primary">Save Medicine</button>
@@ -351,7 +352,7 @@
     <div class="modal" style="max-width:400px;">
       <div class="modal-body">
         <div class="confirm-dialog">
-          <div class="confirm-icon" id="confirmIcon">!</div>
+          <div class="confirm-icon" id="confirmIcon"><i class="fas fa-exclamation-triangle"></i></div>
           <h3 id="confirmTitle">Are you sure?</h3>
           <p id="confirmMessage">This action cannot be undone.</p>
           <div style="display:flex;gap:12px;justify-content:center;">
@@ -382,7 +383,7 @@
         <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
           <button class="btn btn-outline" onclick="closeModal('whatsappModal')">Cancel</button>
           <button class="btn btn-success" id="whatsappSendBtn" onclick="sendWhatsAppReminder()">
-            &#128172; Send via WhatsApp
+            <i class="fab fa-whatsapp"></i> Send via WhatsApp
           </button>
         </div>
       </div>
@@ -427,7 +428,7 @@
           <div class="form-group">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <label style="margin:0;">Reminder Date(s) <span class="required">*</span></label>
-              <button type="button" class="btn btn-sm btn-outline" onclick="addMarketingDateInput()">+ Add Another Date</button>
+              <button type="button" class="btn btn-sm btn-outline" onclick="addMarketingDateInput()"><i class="fas fa-plus"></i> Add Another Date</button>
             </div>
             <div id="marketingDateInputsContainer" style="display:flex; flex-direction:column; gap:8px;">
               <input type="date" class="form-control marketing-date-picker" required>
@@ -473,7 +474,7 @@
   <div id="syncModal" class="modal-overlay" onclick="closeModalOnOverlay(event, 'syncModal')">
     <div class="modal" style="max-width:520px;">
       <div class="modal-header">
-        <h3>&#9729; Database Sync & Backup</h3>
+        <h3><i class="fas fa-cloud-arrow-up"></i> Database Sync & Backup</h3>
         <button class="modal-close" onclick="closeModal('syncModal')">&times;</button>
       </div>
       <div class="modal-body">
@@ -483,24 +484,24 @@
 
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div style="background:var(--primary-bg); border:1px solid var(--primary); padding:14px; border-radius:8px;">
-            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--primary-dark); font-weight:700;">&#128229; Export Data (PC to Mobile)</h4>
+            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--primary-dark); font-weight:700;"><i class="fas fa-file-export"></i> Export Data (PC to Mobile)</h4>
             <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-secondary);">Download full database file from PC to load into your mobile phone.</p>
-            <button type="button" class="btn btn-sm btn-primary" onclick="exportDataToFile()">&#11015; Download Backup File (.json)</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="exportDataToFile()"><i class="fas fa-download"></i> Download Backup File (.json)</button>
           </div>
 
           <div style="background:var(--body-bg); border:1px solid var(--border); padding:14px; border-radius:8px;">
-            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-primary); font-weight:700;">&#128228; Import Data File</h4>
+            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-primary); font-weight:700;"><i class="fas fa-file-import"></i> Import Data File</h4>
             <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-secondary);">Upload a backup file (.json) to restore/sync your data on this device.</p>
             <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importDataFromFile(event)">
-            <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('importFileInput').click()">&#128194; Select & Load Backup File</button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('importFileInput').click()"><i class="fas fa-folder-open"></i> Select & Load Backup File</button>
           </div>
 
           <div style="background:var(--body-bg); border:1px solid var(--border); padding:14px; border-radius:8px;">
-            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-primary); font-weight:700;">&#128203; Quick Copy/Paste Sync Code</h4>
+            <h4 style="margin:0 0 6px 0; font-size:14px; color:var(--text-primary); font-weight:700;"><i class="fas fa-copy"></i> Quick Copy/Paste Sync Code</h4>
             <p style="margin:0 0 8px 0; font-size:12px; color:var(--text-secondary);">Copy your data code string to paste on another device:</p>
             <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-              <button type="button" class="btn btn-sm btn-outline" onclick="copySyncCode()">&#128203; Copy Sync Code</button>
-              <button type="button" class="btn btn-sm btn-outline" onclick="pasteSyncCode()">&#128229; Load Pasted Code</button>
+              <button type="button" class="btn btn-sm btn-outline" onclick="copySyncCode()"><i class="fas fa-copy"></i> Copy Sync Code</button>
+              <button type="button" class="btn btn-sm btn-outline" onclick="pasteSyncCode()"><i class="fas fa-paste"></i> Load Pasted Code</button>
             </div>
           </div>
         </div>
