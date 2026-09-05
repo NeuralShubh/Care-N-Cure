@@ -1423,6 +1423,8 @@ function renderMessages() {
   const container = document.getElementById('marketingTemplatesList');
   if (!container) return;
 
+  closeTplRowMenu();
+
   const tpls = getMarketingTemplates();
   const activeId = getActiveMarketingTemplateId();
 
@@ -1440,18 +1442,17 @@ function renderMessages() {
   container.innerHTML = tpls.map(t => {
     const isActive = t.id === activeId;
     return `
-      <div class="card" style="margin:0; border:${isActive ? '2px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)'}; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(14, 165, 233, 0.15)' : 'none'};">
+      <div class="card" onclick="openTplRowMenu(event, '${t.id}')" style="margin:0; cursor:pointer; border:${isActive ? '2px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)'}; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(14, 165, 233, 0.15)' : 'none'};">
         <div class="card-body" style="padding:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
-            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
-            <button class="btn btn-sm btn-danger" onclick="deleteMessageTemplateItem('${t.id}')" title="Delete Template" style="padding:5px 10px; border-radius:6px;"><i class="fas fa-trash-can"></i></button>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;" onclick="event.stopPropagation()">
+            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title" onclick="event.stopPropagation()">
           </div>
           
-          <div style="margin-bottom:14px;">
-            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message...">${t.message}</textarea>
+          <div style="margin-bottom:14px;" onclick="event.stopPropagation()">
+            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message..." onclick="event.stopPropagation()">${t.message}</textarea>
           </div>
           
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation()">
             ${isActive ? `
               <span class="badge badge-success" style="padding:6px 12px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:#22c55e; color:#fff;">
                 <i class="fas fa-check"></i> Selected for Marketing
@@ -1461,7 +1462,7 @@ function renderMessages() {
                 Select for Marketing
               </button>
             `}
-            <button class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="font-weight:600; font-size:12px;">
+            <button id="tplSave_${t.id}" class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="display:none; font-weight:600; font-size:12px;">
               <i class="fas fa-floppy-disk"></i> Save Template
             </button>
           </div>
@@ -1522,6 +1523,7 @@ function saveMessageTemplateItem(id) {
 }
 
 function deleteMessageTemplateItem(id) {
+  closeTplRowMenu();
   showConfirm('Delete Template', 'Are you sure you want to delete this message template?', function() {
     let tpls = getMarketingTemplates();
     tpls = tpls.filter(t => t.id !== id);
@@ -1534,6 +1536,61 @@ function deleteMessageTemplateItem(id) {
     showToast('Template deleted', 'success');
   });
 }
+
+let tplRowMenuId = null;
+
+function openTplRowMenu(event, id) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('tplRowMenu');
+  if (!menu) return;
+  if (tplRowMenuId === id && menu.style.display === 'block') {
+    closeTplRowMenu();
+    return;
+  }
+  tplRowMenuId = id;
+  menu.style.display = 'block';
+  menu.style.visibility = 'hidden';
+  let x = event && event.clientX ? event.clientX : window.innerWidth / 2;
+  let y = event && event.clientY ? event.clientY : window.innerHeight / 2;
+  const menuWidth = 170;
+  const menuHeight = 100;
+  if (x + menuWidth > window.innerWidth - 8) x = window.innerWidth - menuWidth - 8;
+  if (y + menuHeight > window.innerHeight - 8) y = y - menuHeight - 8;
+  if (x < 8) x = 8;
+  if (y < 8) y = 8;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.style.visibility = 'visible';
+}
+
+function closeTplRowMenu() {
+  const menu = document.getElementById('tplRowMenu');
+  if (menu) menu.style.display = 'none';
+  tplRowMenuId = null;
+}
+
+function tplRowMenuEdit() {
+  const id = tplRowMenuId;
+  closeTplRowMenu();
+  if (!id) return;
+  const saveBtn = document.getElementById('tplSave_' + id);
+  if (saveBtn) saveBtn.style.display = '';
+  const titleInput = document.getElementById('tplTitle_' + id);
+  if (titleInput) titleInput.focus();
+}
+
+function tplRowMenuDelete() {
+  const id = tplRowMenuId;
+  closeTplRowMenu();
+  if (id) deleteMessageTemplateItem(id);
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('tplRowMenu');
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+    closeTplRowMenu();
+  }
+});
 
 // ===================== WHATSAPP REMINDER =====================
 function openWhatsAppReminder(customerId, medicineId, finishDate) {

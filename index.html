@@ -227,6 +227,10 @@
           <div id="marketingTemplatesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap:18px;">
             <!-- JS renders templates dynamically -->
           </div>
+          <div id="tplRowMenu" class="med-row-menu" style="display:none;">
+            <button type="button" class="med-row-menu-btn med-row-menu-edit" onclick="tplRowMenuEdit()"><i class="fas fa-pen-to-square"></i> Edit</button>
+            <button type="button" class="med-row-menu-btn med-row-menu-delete" onclick="tplRowMenuDelete()"><i class="fas fa-trash-can"></i> Delete</button>
+          </div>
         </section>
       </div>
     </main>
