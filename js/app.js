@@ -1444,12 +1444,12 @@ function renderMessages() {
     return `
       <div class="card" onclick="openTplRowMenu(event, '${t.id}')" style="margin:0; cursor:pointer; border:${isActive ? '2px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)'}; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(14, 165, 233, 0.15)' : 'none'};">
         <div class="card-body" style="padding:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;" onclick="event.stopPropagation()">
-            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title" onclick="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
+            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" readonly style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
           </div>
           
-          <div style="margin-bottom:14px;" onclick="event.stopPropagation()">
-            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message..." onclick="event.stopPropagation()">${t.message}</textarea>
+          <div style="margin-bottom:14px;">
+            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" readonly style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message...">${t.message}</textarea>
           </div>
           
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation()">
@@ -1462,7 +1462,7 @@ function renderMessages() {
                 Select for Marketing
               </button>
             `}
-            <button id="tplSave_${t.id}" class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="display:none; font-weight:600; font-size:12px;">
+            <button id="tplSave_${t.id}" class="btn btn-sm btn-primary" onclick="saveMessageTemplateItem('${t.id}')" style="font-weight:600; font-size:12px;">
               <i class="fas fa-floppy-disk"></i> Save Template
             </button>
           </div>
@@ -1518,6 +1518,8 @@ function saveMessageTemplateItem(id) {
     tpl.title = titleInput.value.trim();
     tpl.message = msgInput.value.trim();
     DB.set('marketingTemplates', tpls);
+    titleInput.readOnly = true;
+    msgInput.readOnly = true;
     showToast('Template saved successfully', 'success');
   }
 }
@@ -1541,6 +1543,8 @@ let tplRowMenuId = null;
 
 function openTplRowMenu(event, id) {
   if (event) event.stopPropagation();
+  const tgt = event ? event.target : null;
+  if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA') && !tgt.readOnly) return;
   const menu = document.getElementById('tplRowMenu');
   if (!menu) return;
   if (tplRowMenuId === id && menu.style.display === 'block') {
@@ -1573,9 +1577,10 @@ function tplRowMenuEdit() {
   const id = tplRowMenuId;
   closeTplRowMenu();
   if (!id) return;
-  const saveBtn = document.getElementById('tplSave_' + id);
-  if (saveBtn) saveBtn.style.display = '';
   const titleInput = document.getElementById('tplTitle_' + id);
+  const msgInput = document.getElementById('tplMsg_' + id);
+  if (titleInput) titleInput.readOnly = false;
+  if (msgInput) msgInput.readOnly = false;
   if (titleInput) titleInput.focus();
 }
 
