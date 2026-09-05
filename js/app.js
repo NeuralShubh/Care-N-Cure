@@ -1743,37 +1743,10 @@ function showConfirm(title, message, callback) {
 
 
 function autoGenerateReminders() {
-  const purchases = DB.get('purchases') || [];
-  const reminders = DB.get('reminders') || [];
-  const customers = DB.get('customers') || [];
-  let updated = false;
-
-  purchases.forEach(p => {
-    if (p.customerId && p.finishDate) {
-      const exists = reminders.some(r => r.customerId === p.customerId && r.finishDate === p.finishDate && r.medicineName === p.medicineName);
-      if (!exists) {
-        const cust = customers.find(c => c.id === p.customerId);
-        reminders.push({
-          id: DB.generateId(),
-          customerId: p.customerId,
-          customerName: cust ? cust.name : 'Customer',
-          customerMobile: cust ? cust.mobile : '',
-          medicineId: p.medicineId || '',
-          medicineName: p.medicineName || 'Medicine',
-          finishDate: p.finishDate,
-          customMessage: '',
-          isCustomMessage: false,
-          status: 'pending',
-          createdDate: new Date().toISOString().split('T')[0]
-        });
-        updated = true;
-      }
-    }
-  });
-
-  if (updated) {
-    DB.set('reminders', reminders);
-  }
+  // Customers are added to Marketing only when the user selects them
+  // (via "Add Marketing Follow-up" / "+ Add Marketing" -> saveNewReminder).
+  // No automatic reminder creation here.
+  return;
 }
 
 function syncCustomerReminders() {
