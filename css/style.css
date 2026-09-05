@@ -116,11 +116,20 @@ h5 {
   font-weight: var(--fw-medium);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Scrollbar — medium-thick, modern, consistent across mobile/tablet/desktop */
+html {
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-muted) transparent;
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 8px; min-height: 40px; min-width: 40px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+::-webkit-scrollbar-corner { background: transparent; }
+/* Keep same thickness on mobile/tablet — do not shrink */
+@media (max-width: 1024px), (max-width: 768px) {
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+}
 
 /* Login Page */
 .login-page {
