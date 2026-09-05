@@ -351,8 +351,8 @@ textarea.form-control {
   font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
-  color: var(--sidebar-text);
-  opacity: 0.75;
+  color: #94A3B8;
+  opacity: 1;
 }
 
 .nav-item {
@@ -362,7 +362,7 @@ textarea.form-control {
   padding: 10px 20px;
   margin: 2px 8px;
   border-radius: var(--radius);
-  color: var(--sidebar-text);
+  color: #94A3B8;
   text-decoration: none;
   font-size: var(--font-base);
   font-weight: var(--fw-medium);
@@ -404,6 +404,7 @@ textarea.form-control {
   width: 20px;
   text-align: center;
   font-size: 16px;
+  color: #94A3B8;
 }
 
 .nav-item .nav-badge {
