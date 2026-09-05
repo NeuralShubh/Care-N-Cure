@@ -707,20 +707,14 @@ function renderCustomers() {
 
   const table = document.getElementById('customerTable');
   if (customers.length === 0) {
-    table.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-icon"><i class="fas fa-users"></i></div><h3>No customers found</h3></td></tr>';
+    table.innerHTML = '<tr><td colspan="2" class="empty-state"><div class="empty-icon"><i class="fas fa-users"></i></div><h3>No customers found</h3></td></tr>';
     return;
   }
 
   table.innerHTML = customers.map(c => {
     return `<tr onclick="viewCustomerHistory('${c.id}')" style="cursor:pointer;" title="Click to view details and actions">
       <td><strong>${c.name}</strong></td>
-      <td>${c.address || '-'}</td>
-      <td>${c.mobile}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="whatsapp-link-btn" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat with ${c.name} on WhatsApp">
-          <i class="fab fa-whatsapp"></i>
-        </button>
-      </td>
+      <td><div class="cust-mobile-wrap">${c.mobile}<button class="whatsapp-link-btn" onclick="openCustomerWhatsApp('${c.id}', event)" title="Chat with ${c.name} on WhatsApp"><i class="fab fa-whatsapp"></i></button></div></td>
     </tr>`;
   }).join('');
 }
