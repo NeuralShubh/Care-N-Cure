@@ -6,6 +6,21 @@ let cloudPushTimer = null;
 let isCloudSyncing = false;
 let hasPendingCloudPush = false;
 let lastCloudSyncTimestamp = 0;
+let pendingCloudRefresh = false;
+
+function isUserBusyEditing() {
+  try {
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return true;
+    if (document.querySelector('.modal-overlay.active')) return true;
+  } catch(e) {}
+  return false;
+}
+
+function refreshUIFromCloud() {
+  try { if (typeof refreshCurrentPage === 'function') refreshCurrentPage(); } catch(e) {}
+  try { if (typeof updateBadges === 'function') updateBadges(); } catch(e) {}
+}
 
 const DB = {
   get(key) {
@@ -172,6 +187,10 @@ const DB = {
   },
   async pullFromCloud() {
     if (isCloudSyncing) return false;
+    if (pendingCloudRefresh && !isUserBusyEditing()) {
+      pendingCloudRefresh = false;
+      refreshUIFromCloud();
+    }
     try {
       const res = await fetch(CLOUD_DB_URL);
       if (!res || !res.ok) return false;
@@ -180,9 +199,15 @@ const DB = {
       
       const cloudData = result.data;
       if (cloudData && typeof cloudData === 'object') {
+        const localTs = parseInt(localStorage.getItem('cnc_last_updated') || '0') || 0;
+        const cloudTs = cloudData.lastUpdated || 0;
+        if (cloudTs && cloudTs <= localTs) return false;
         DB.importAllData(cloudData, true);
-        if (typeof refreshCurrentPage === 'function') refreshCurrentPage();
-        if (typeof updateBadges === 'function') updateBadges();
+        if (isUserBusyEditing()) {
+          pendingCloudRefresh = true;
+          return true;
+        }
+        refreshUIFromCloud();
         return true;
       }
     } catch (err) {

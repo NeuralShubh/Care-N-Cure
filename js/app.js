@@ -1419,6 +1419,10 @@ function getActiveMarketingTemplate() {
   return active || tpls[0] || { id: 'default', title: 'Default Offer', message: 'Hello {customerName}, greetings from Care N Cure! How can we assist you today? Stay healthy! Care N Cure' };
 }
 
+function escTplHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderMessages() {
   const container = document.getElementById('marketingTemplatesList');
   if (!container) return;
@@ -1445,11 +1449,11 @@ function renderMessages() {
       <div class="card" onclick="openTplRowMenu(event, '${t.id}')" style="margin:0; cursor:pointer; border:${isActive ? '2px solid #0ea5e9' : '1px solid var(--border-color, #e2e8f0)'}; transition:all 0.2s ease; box-shadow:${isActive ? '0 4px 14px rgba(14, 165, 233, 0.15)' : 'none'};">
         <div class="card-body" style="padding:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;">
-            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${t.title}" readonly style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
+            <input type="text" id="tplTitle_${t.id}" class="form-control" value="${escTplHtml(t.title)}" readonly style="font-weight:700; font-size:15px; background:var(--body-bg, #f8fafc);" placeholder="Template Title">
           </div>
           
           <div style="margin-bottom:14px;">
-            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" readonly style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message...">${t.message}</textarea>
+            <textarea id="tplMsg_${t.id}" class="form-control" rows="4" readonly style="font-size:13px; resize:vertical; background:var(--body-bg, #f8fafc); line-height:1.5;" placeholder="Enter template message...">${escTplHtml(t.message)}</textarea>
           </div>
           
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;" onclick="event.stopPropagation()">
