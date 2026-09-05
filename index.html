@@ -155,13 +155,17 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Medicine</th><th>Category</th><th>Actions</th>
+                      <th>Medicine</th><th>Category</th>
                     </tr>
                   </thead>
                   <tbody id="medicineTable"></tbody>
                 </table>
               </div>
             </div>
+          </div>
+          <div id="medRowMenu" class="med-row-menu" style="display:none;">
+            <button type="button" class="med-row-menu-btn med-row-menu-edit" onclick="medRowMenuEdit()"><i class="fas fa-pen-to-square"></i> Edit</button>
+            <button type="button" class="med-row-menu-btn med-row-menu-delete" onclick="medRowMenuDelete()"><i class="fas fa-trash-can"></i> Delete</button>
           </div>
         </section>
 

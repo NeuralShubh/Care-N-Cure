@@ -223,20 +223,15 @@ function renderMedicines() {
 
   const table = document.getElementById('medicineTable');
   if (medicines.length === 0) {
-    table.innerHTML = '<tr><td colspan="3" class="empty-state"><div class="empty-icon"><i class="fas fa-pills"></i></div><h3>No medicines found</h3></td></tr>';
+    closeMedicineRowMenu();
+    table.innerHTML = '<tr><td colspan="2" class="empty-state"><div class="empty-icon"><i class="fas fa-pills"></i></div><h3>No medicines found</h3></td></tr>';
     return;
   }
 
   table.innerHTML = medicines.map(m => {
-    return `<tr>
+    return `<tr onclick="openMedicineRowMenu(event, '${m.id}')">
       <td><strong>${m.name}</strong></td>
       <td><span class="badge badge-neutral">${m.category}</span></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-icon btn-edit" onclick="editMedicine('${m.id}')" title="Edit"><i class="fas fa-pen-to-square"></i></button>
-          <button class="btn-icon btn-delete" onclick="deleteMedicine('${m.id}')" title="Delete"><i class="fas fa-trash-can"></i></button>
-        </div>
-      </td>
     </tr>`;
   }).join('');
 }
@@ -451,6 +446,7 @@ function saveMedicine(e) {
 }
 
 function deleteMedicine(id) {
+  closeMedicineRowMenu();
   closeModal('medicineModal');
   showConfirm('Delete Medicine', 'Are you sure you want to delete this medicine? This action cannot be undone.', function() {
     let medicines = DB.get('medicines');
@@ -462,6 +458,60 @@ function deleteMedicine(id) {
     updateBadges();
   });
 }
+
+let medRowMenuId = null;
+
+function openMedicineRowMenu(event, id) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('medRowMenu');
+  if (!menu) {
+    editMedicine(id);
+    return;
+  }
+  if (medRowMenuId === id && menu.style.display === 'block') {
+    closeMedicineRowMenu();
+    return;
+  }
+  medRowMenuId = id;
+  menu.style.display = 'block';
+  menu.style.visibility = 'hidden';
+  let x = event && event.clientX ? event.clientX : window.innerWidth / 2;
+  let y = event && event.clientY ? event.clientY : window.innerHeight / 2;
+  const menuWidth = 170;
+  const menuHeight = 100;
+  if (x + menuWidth > window.innerWidth - 8) x = window.innerWidth - menuWidth - 8;
+  if (y + menuHeight > window.innerHeight - 8) y = y - menuHeight - 8;
+  if (x < 8) x = 8;
+  if (y < 8) y = 8;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.style.visibility = 'visible';
+}
+
+function closeMedicineRowMenu() {
+  const menu = document.getElementById('medRowMenu');
+  if (menu) menu.style.display = 'none';
+  medRowMenuId = null;
+}
+
+function medRowMenuEdit() {
+  const id = medRowMenuId;
+  closeMedicineRowMenu();
+  if (id) editMedicine(id);
+}
+
+function medRowMenuDelete() {
+  const id = medRowMenuId;
+  closeMedicineRowMenu();
+  if (id) deleteMedicine(id);
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('medRowMenu');
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+    closeMedicineRowMenu();
+  }
+});
 
 // ===================== CUSTOMERS =====================
 let selectedCustMedicines = {};

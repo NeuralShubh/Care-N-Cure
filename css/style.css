@@ -1840,3 +1840,65 @@ textarea.form-control {
   .search-box { max-width: 100%; }
 }
 
+/* Medicines: mobile search + category side-by-side, Add full-width below (desktop unchanged) */
+@media (max-width: 768px) {
+  #page-medicines .toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+  #page-medicines .toolbar .search-box {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+  #page-medicines .toolbar .filter-select {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  #page-medicines .toolbar .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Medicines row-click popup (Edit/Delete) */
+.med-row-menu {
+  position: fixed;
+  z-index: 2000;
+  min-width: 150px;
+  max-width: calc(100vw - 24px);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.med-row-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+.med-row-menu-edit { color: var(--info); }
+.med-row-menu-edit:hover { background: var(--info-bg); }
+.med-row-menu-delete { color: var(--danger); }
+.med-row-menu-delete:hover { background: var(--danger-bg); }
+#page-medicines .data-table tbody tr { cursor: pointer; }
+
