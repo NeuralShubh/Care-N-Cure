@@ -1925,3 +1925,38 @@ textarea.form-control {
   #page-dashboard .stat-card .stat-label { font-size: 12px; }
 }
 
+/* Medicines + Customers: long names wrap naturally, rows grow, no horizontal scrollbar (desktop unchanged) */
+@media (max-width: 768px) {
+  #page-medicines .table-container,
+  #page-customers .table-container {
+    overflow-x: hidden;
+  }
+  #page-medicines .data-table,
+  #page-customers .data-table {
+    min-width: 0;
+    width: 100%;
+    table-layout: fixed;
+  }
+  #page-medicines .data-table th,
+  #page-medicines .data-table td,
+  #page-customers .data-table th,
+  #page-customers .data-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  #page-medicines .data-table td strong,
+  #page-customers .data-table td strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  #page-medicines .data-table .badge {
+    white-space: normal;
+    text-align: center;
+  }
+  #page-customers .cust-mobile-wrap {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+}
+
