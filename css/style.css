@@ -40,7 +40,7 @@
   --info-bg: #DBEAFE;
   --sidebar-bg: #0F172A;
   --sidebar-hover: #1E293B;
-  --sidebar-active: #0EA5C6;
+  --sidebar-active: #08A8C7;
   --sidebar-text: #64748B;
   --sidebar-text-active: #FFFFFF;
   --body-bg: #F1F5F9;
@@ -371,6 +371,24 @@ textarea.form-control {
 .nav-item.active {
   background: var(--sidebar-active);
   color: white;
+  /* Hexagon/Arrow style: left aligned normally, right ends in clean point */
+  border-radius: 6px 0 0 6px;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+  -webkit-clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+  padding-right: 30px;
+}
+
+.nav-item.active .nav-icon {
+  color: #FFFFFF;
+}
+
+/* Responsive: slightly smaller arrow tip on mobile for clean fit */
+@media (max-width: 768px) {
+  .nav-item.active {
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+    -webkit-clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+    padding-right: 26px;
+  }
 }
 
 .nav-item .nav-icon {
